@@ -1,0 +1,82 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8f9fa; /* very light gray for warmth */
+}
+
+.hero {
+  background: linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), 
+              url('https://images.unsplash.com/photo-1517849845537-4d257902454a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  color: white;
+}
+
+.navbar-brand {
+  font-size: 1.9rem;
+  font-weight: 700;
+}
+
+.btn-success {
+  background-color: #2e7d32;
+  border-color: #2e7d32;
+}
+
+.btn-success:hover {
+  background-color: #1b5e20;
+  border-color: #1b5e20;
+}
+
+.card {
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  background: white;
+}
+
+.card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+}
+
+.card-img-top {
+  height: 220px;
+  object-fit: cover;
+  border-bottom: 1px solid #eee;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.card-title {
+  font-size: 1.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.badge {
+  font-size: 0.85rem;
+  padding: 0.45em 0.9em;
+  border-radius: 1rem;
+}
+
+.text-success {
+  color: #2e7d32 !important;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .hero {
+    min-height: 50vh;
+  }
+  
+  .card-img-top {
+    height: 180px;
+  }
+  
+  .card-title {
+    font-size: 1.25rem;
+  }
+}
