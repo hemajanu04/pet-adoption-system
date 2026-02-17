@@ -3,23 +3,26 @@ from flask_cors import CORS
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
-import jwt  # we'll use PyJWT for manual verification
+import jwt
 from functools import wraps
 
 load_dotenv()
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
-CORS(app, resources={r"/api/*": {"origins": "*"}})  # temporary * - restrict later
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # Supabase config
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_SECRET_KEY = os.getenv("SUPABASE_SECRET_KEY")  # legacy service_role JWT or sb_secret
+SUPABASE_SECRET_KEY = os.getenv("SUPABASE_SECRET_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_SECRET_KEY)
 
-# Supabase JWT secret (same as service_role key - used to verify user tokens)
-JWT_SECRET = SUPABASE_SECRET_KEY  # Supabase signs user JWTs with this
+JWT_SECRET = SUPABASE_SECRET_KEY
 
+
+# ─────────────────────────────
+# AUTH MIDDLEWARE
+# ─────────────────────────────
 def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -30,43 +33,44 @@ def require_auth(f):
         token = auth_header.split(" ")[1]
 
         try:
-            # Verify token (Supabase uses HS256)
             payload = jwt.decode(
                 token,
                 JWT_SECRET,
                 algorithms=["HS256"],
-                options={"verify_exp": True, "verify_signature": True}
+                options={"verify_exp": True}
             )
 
             user_id = payload.get("sub")
             if not user_id:
-                return jsonify({"error": "Invalid token - no user ID"}), 401
+                return jsonify({"error": "Invalid token"}), 401
 
-            # Fetch role from profiles table (secure way)
-            profile = supabase.table("profiles").select("role").eq("id", user_id).single().execute()
+            profile = supabase.table("profiles") \
+                .select("role") \
+                .eq("id", user_id) \
+                .single() \
+                .execute()
+
             if not profile.data:
                 return jsonify({"error": "User profile not found"}), 403
 
-            role = profile.data["role"]
-
-            # Attach to Flask g (global per request)
             g.user_id = user_id
-            g.role = role
+            g.role = profile.data["role"]
 
         except jwt.ExpiredSignatureError:
             return jsonify({"error": "Token expired"}), 401
         except jwt.InvalidTokenError:
             return jsonify({"error": "Invalid token"}), 401
         except Exception as e:
-            return jsonify({"error": f"Auth error: {str(e)}"}), 500
+            return jsonify({"error": str(e)}), 500
 
         return f(*args, **kwargs)
 
     return decorated
 
-# ────────────────────────────────────────────────
-# Routes
-# ────────────────────────────────────────────────
+
+# ─────────────────────────────
+# ROUTES
+# ─────────────────────────────
 
 @app.route('/')
 def home():
@@ -75,11 +79,10 @@ def home():
         "status": "connected"
     })
 
+
 @app.route('/api/health')
 def health():
     try:
-        # Option A: Get count + no rows (most efficient)
-        # select any column (e.g. 'id'), limit(0) prevents row data, count='exact' gives the total
         result = (
             supabase.table("profiles")
             .select("id", count="exact")
@@ -87,16 +90,15 @@ def health():
             .execute()
         )
 
-        profiles_count = result.count if hasattr(result, "count") else 0
-
         return jsonify({
             "status": "healthy",
             "database_connected": True,
-            "profiles_count": profiles_count
+            "profiles_count": result.count
         })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-# Protected test route - requires valid user token
+
+
 @app.route('/api/protected')
 @require_auth
 def protected():
@@ -106,20 +108,22 @@ def protected():
         "role": g.role
     })
 
+
+# ─────────────────────────────
+# GET ALL PETS
+# ─────────────────────────────
 @app.route('/api/pets', methods=['GET'])
 def get_pets():
     try:
         query = supabase.table("pets") \
-            .select("*") \
+            .select("*", count="exact") \
             .eq("is_active", True) \
             .eq("status", "available")
 
-        # Optional filters (add later from frontend query params)
         species = request.args.get('species')
         if species:
             query = query.eq("species", species)
 
-        # Pagination
         limit = request.args.get('limit', default=12, type=int)
         page = request.args.get('page', default=1, type=int)
         offset = (page - 1) * limit
@@ -128,13 +132,18 @@ def get_pets():
 
         return jsonify({
             "pets": result.data or [],
-            "count": result.count if hasattr(result, 'count') else len(result.data or []),
+            "count": result.count,
             "page": page,
             "limit": limit
         })
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
+
+# ─────────────────────────────
+# GET SINGLE PET
+# ─────────────────────────────
 @app.route('/api/pets/<pet_id>', methods=['GET'])
 def get_pet_detail(pet_id):
     try:
@@ -146,13 +155,46 @@ def get_pet_detail(pet_id):
             .execute()
 
         if not result.data:
-            return jsonify({"error": "Pet not found or not available"}), 404
+            return jsonify({"error": "Pet not found"}), 404
 
         return jsonify({
             "pet": result.data
         })
+
     except Exception as e:
-        return jsonify({"error": str(e)}), 500 @app.route('/api/pets/<pet_id>', methods=['GET'])
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────
+# ==============================
+# CREATE ADOPTION REQUEST
+# ==============================
+@app.route("/api/adopt", methods=["POST"])
+def create_adoption_request():
+    try:
+        data = request.get_json()
+
+        user_id = data.get("user_id")
+        pet_id = data.get("pet_id")
+
+        response = supabase.table("adoption_requests").insert({
+            "user_id": user_id,
+            "pet_id": pet_id,
+            "full_name": data.get("full_name"),
+            "phone": data.get("phone"),
+            "address": data.get("address"),
+            "message": data.get("message"),
+            "status": "pending"
+        }).execute()
+
+        return jsonify({
+            "message": "Adoption request submitted successfully"
+        }), 201
+
+    except Exception as e:
+        return jsonify({
+            "message": str(e)
+        }), 500
 
 
 if __name__ == '__main__':

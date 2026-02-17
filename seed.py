@@ -15,36 +15,20 @@ print("Connecting to Supabase...")
 supabase: Client = create_client(url, key)
 print("Connection created.")
 
-# FIX FOR RLS INSERT ERROR: Force service_role key to bypass RLS on pets table
+# Bypass RLS using service_role key
 supabase.postgrest.auth(key)
-print("RLS bypass activated using service_role key - inserts should now work.")
+print("RLS bypass activated.")
+
 
 def seed_data():
     print("\n=== Starting seeding process ===")
 
     shelter_id = "f6af1fe6-8a57-4afb-91f5-1c57f8d1309a"
-
     print(f"Using shelter user UUID: {shelter_id}")
 
-    # Step 1: Update shelter profile
-    print("Updating shelter profile role & name...")
-    try:
-        profile_update = supabase.table("profiles").update({
-            "role": "shelter",
-            "full_name": "Happy Paws Shelter"
-        }).eq("id", shelter_id).execute()
-
-        if profile_update.data:
-            print("→ Profile updated successfully")
-        elif profile_update.count == 0:
-            print("→ No matching profile found → you may need to create it first")
-        else:
-            print("→ Profile update result:", profile_update)
-    except Exception as e:
-        print(f"ERROR updating profile: {str(e)}")
-
-    # Step 2: Sample pets (Charlie removed, Coco added)
     sample_pets = [
+
+        # 1
         {
             "name": "Max",
             "species": "Dog",
@@ -58,27 +42,109 @@ def seed_data():
             "posted_by": shelter_id,
             "is_active": True
         },
+
+        # 2
         {
             "name": "Luna",
             "species": "Cat",
             "breed": "Persian",
             "age": 2,
             "gender": "Female",
-            "description": "Calm and affectionate Persian cat who loves laps and gentle pets.",
+            "description": "Calm and affectionate Persian cat who loves cuddles.",
             "image_url": "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=800&auto=format&fit=crop",
             "location": "Bengaluru",
             "status": "available",
             "posted_by": shelter_id,
             "is_active": True
         },
+
+        # 3
         {
-            "name": "Coco",
-            "species": "Guinea Pig",
-            "breed": "American",
-            "age": 2,
+            "name": "Rocky",
+            "species": "Dog",
+            "breed": "German Shepherd",
+            "age": 4,
+            "gender": "Male",
+            "description": "Loyal and protective German Shepherd.",
+            "image_url": "https://images.unsplash.com/photo-1589941013453-ec89f33b5e95?w=800&auto=format&fit=crop",
+            "location": "Bengaluru",
+            "status": "available",
+            "posted_by": shelter_id,
+            "is_active": True
+        },
+
+
+        # 4
+        {
+            "name": "Simba",
+            "species": "Cat",
+            "breed": "Maine Coon",
+            "age": 3,
+            "gender": "Male",
+            "description": "Majestic Maine Coon with a calm personality.",
+            "image_url": "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800&auto=format&fit=crop",
+            "location": "Bengaluru",
+            "status": "available",
+            "posted_by": shelter_id,
+            "is_active": True
+        },
+
+        # 5
+        {
+            "name": "Daisy",
+            "species": "Rabbit",
+            "breed": "Holland Lop",
+            "age": 1,
             "gender": "Female",
-            "description": "Sweet and sociable guinea pig who loves veggies, cuddles, and gentle pets.",
-            "image_url": "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&auto=format&fit=crop&q=80",  # Cute guinea pig
+            "description": "Cute rabbit who enjoys gentle pets and fresh veggies.",
+            "image_url": "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=800&auto=format&fit=crop",
+            "location": "Bengaluru",
+            "status": "available",
+            "posted_by": shelter_id,
+            "is_active": True
+        },
+
+        # 6
+        {
+            "name": "Charlie",
+            "species": "Dog",
+            "breed": "Beagle",
+            "age": 2,
+            "gender": "Male",
+            "description": "Curious Beagle with lots of energy.",
+            "image_url": "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=800&auto=format&fit=crop",
+            "location": "Bengaluru",
+            "status": "available",
+            "posted_by": shelter_id,
+            "is_active": True
+        },
+
+    
+
+        # 7
+        {
+            "name": "Nala",
+            "species": "Dog",
+            "breed": "Indie",
+            "age": 3,
+            "gender": "Female",
+            "description": "Friendly Indian native breed looking for a loving home.",
+            "image_url": "https://images.unsplash.com/photo-1507146426996-ef05306b995a?w=800&auto=format&fit=crop",
+            "location": "Bengaluru",
+            "status": "available",
+            "posted_by": shelter_id,
+            "is_active": True
+        },
+
+        # 8
+        {
+            "name": "Oliver",
+            "species": "Parrot",
+            "breed": "African Grey",
+            "age": 5,
+            "gender": "Male",
+            "description": "Intelligent parrot that enjoys interaction.",
+            "image_url": "https://images.unsplash.com/photo-1552728089-57bdde30beb3?w=800&auto=format&fit=crop",
             "location": "Bengaluru",
             "status": "available",
             "posted_by": shelter_id,
@@ -86,13 +152,10 @@ def seed_data():
         }
     ]
 
-    print(f"\nFound {len(sample_pets)} pets to seed.")
-
     added_count = 0
     skipped_count = 0
 
     for pet in sample_pets:
-        print(f"\nChecking pet: {pet['name']} ({pet['species']})")
         try:
             existing = supabase.table("pets") \
                 .select("id") \
@@ -101,29 +164,23 @@ def seed_data():
                 .execute()
 
             if existing.data:
-                print(f"→ Already exists (skipping)")
+                print(f"{pet['name']} → Already exists (skipping)")
                 skipped_count += 1
             else:
                 insert_result = supabase.table("pets").insert(pet).execute()
                 if insert_result.data:
-                    print(f"→ Added successfully")
+                    print(f"{pet['name']} → Added successfully")
                     added_count += 1
                 else:
-                    print(f"→ Insert failed: {insert_result}")
+                    print(f"{pet['name']} → Insert failed:", insert_result)
+
         except Exception as e:
-            print(f"→ ERROR inserting {pet['name']}: {str(e)}")
+            print(f"ERROR inserting {pet['name']}: {str(e)}")
 
     print("\n=== Seeding Summary ===")
-    print(f"Added: {added_count} pets")
-    print(f"Skipped (already exist): {skipped_count} pets")
-    print("Done! You can now check:")
-    print("  • Supabase dashboard → Table Editor → pets")
-    print("  • Browser: http://127.0.0.1:5000/api/pets")
-    print("  • Coco detail example (after getting ID): http://127.0.0.1:5000/static/pet-detail.html?id=[Coco-ID]")
+    print(f"Added: {added_count}")
+    print(f"Skipped: {skipped_count}")
+
 
 if __name__ == "__main__":
-    try:
-        seed_data()
-    except Exception as e:
-        print("\nCRITICAL ERROR during seeding:")
-        print(str(e))
+    seed_data()
