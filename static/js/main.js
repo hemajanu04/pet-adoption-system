@@ -1,12 +1,12 @@
 // ================================
- // CONFIG
- // ================================
+// CONFIG
+// ================================
 const SUPABASE_URL = 'https://gnxotcrrwdiswqbokeyr.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_fr96JXERwrwOA_Or8ZhL5w_pM9uNVOC';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdueG90Y3Jyd2Rpc3dxYm9rZXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNzcyMzYsImV4cCI6MjA4Njc1MzIzNn0.uqaZEpXtMVWl8nbMnvdxqwfQIfKzwgLKEpQLtmSOpBY';
 
 // ================================
- // AUTH FUNCTIONS
- // ================================
+// AUTH FUNCTIONS
+// ================================
 
 function getCurrentUser() {
   const token = localStorage.getItem('token');
@@ -44,8 +44,8 @@ function updateNavbar() {
 }
 
 // ================================
- // LOGIN FORM
- // ================================
+// LOGIN FORM
+// ================================
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {
   loginForm.addEventListener('submit', async (e) => {
@@ -60,7 +60,7 @@ if (loginForm) {
       const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
         method: 'POST',
         headers: {
-          'apikey': SUPABASE_PUBLISHABLE_KEY,
+          'apikey': SUPABASE_ANON_KEY,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ email, password })
@@ -75,6 +75,7 @@ if (loginForm) {
         throw new Error(msg);
       }
 
+      // Save user to localStorage (simple - no role)
       localStorage.setItem('token', data.access_token);
       localStorage.setItem('user', JSON.stringify({
         id: data.user.id,
@@ -82,8 +83,9 @@ if (loginForm) {
         full_name: data.user.user_metadata?.full_name || email.split('@')[0]
       }));
 
-      messageDiv.innerHTML = '<div class="alert alert-success">Login successful! Redirecting...</div>';
+      messageDiv.innerHTML = '<div class="alert alert-success">✅ Login successful! Redirecting...</div>';
       setTimeout(() => location.href = '/static/index.html', 1500);
+
     } catch (err) {
       messageDiv.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
     }
@@ -91,8 +93,8 @@ if (loginForm) {
 }
 
 // ================================
- // REGISTER FORM
- // ================================
+// REGISTER FORM
+// ================================
 const registerForm = document.getElementById('registerForm');
 if (registerForm) {
   registerForm.addEventListener('submit', async (e) => {
@@ -108,7 +110,7 @@ if (registerForm) {
       const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
         method: 'POST',
         headers: {
-          'apikey': SUPABASE_PUBLISHABLE_KEY,
+          'apikey': SUPABASE_ANON_KEY,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -125,35 +127,11 @@ if (registerForm) {
       if (!response.ok) {
         let msg = data.msg || data.error_description || 'Registration failed';
         if (msg.includes('duplicate')) msg = 'Email already registered';
-        if (msg.includes('invalid')) msg = 'Invalid email or password';
+        if (msg.includes('invalid')) msg = 'Invalid email or weak password';
         throw new Error(msg);
       }
 
-      messageDiv.innerHTML = '<div class="alert alert-success">Registration successful! Logging in...</div>';
-
-      // Auto-login after register
-      const loginResponse = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_PUBLISHABLE_KEY,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password })
-      });
-
-      const loginData = await loginResponse.json();
-
-      if (loginResponse.ok) {
-        localStorage.setItem('token', loginData.access_token);
-        localStorage.setItem('user', JSON.stringify({
-          id: loginData.user.id,
-          email: loginData.user.email,
-          full_name: fullName
-        }));
-        setTimeout(() => location.href = '/static/index.html', 1500);
-      } else {
-        messageDiv.innerHTML += '<div class="alert alert-warning mt-2">Please confirm your email to login.</div>';
-      }
+      messageDiv.innerHTML = '<div class="alert alert-success">✅ Registration successful! Please check your email and confirm your account, then <a href="/static/login.html">Login here</a>.</div>';
 
     } catch (err) {
       messageDiv.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
@@ -166,18 +144,13 @@ if (registerForm) {
 // ================================
 async function loadFeaturedPets() {
   const container = document.getElementById('featured-pets') || document.getElementById('pets-container');
-  if (!container) {
-    console.error('No container found for pets');
-    return;
-  }
+  if (!container) return;
 
   container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-success"></div><p>Loading pets...</p></div>';
 
   try {
     const res = await fetch('/api/pets');
-    console.log('Pets API status:', res.status);
     const data = await res.json();
-    console.log('Pets data:', data);
 
     if (!data.pets || data.pets.length === 0) {
       container.innerHTML = '<div class="alert alert-info text-center">No pets available right now.</div>';
@@ -185,12 +158,13 @@ async function loadFeaturedPets() {
     }
 
     container.innerHTML = '';
-
     data.pets.forEach(pet => {
       const card = `
         <div class="col-md-4 mb-4">
           <div class="card h-100 shadow-sm border-0 rounded-4">
-            <img src="${pet.image_url}" class="card-img-top" style="height:250px; object-fit:cover;">
+            <img src="${pet.image_url || 'https://placehold.co/400x250?text=No+Image'}"
+                 class="card-img-top" style="height:250px; object-fit:cover;"
+                 onerror="this.src='https://placehold.co/400x250?text=No+Image'">
             <div class="card-body p-4">
               <h5 class="card-title fw-bold">${pet.name}</h5>
               <p class="card-text">
@@ -230,9 +204,7 @@ async function loadPetDetail() {
 
   try {
     const res = await fetch(`/api/pets/${petId}`);
-    console.log('Pet detail fetch status:', res.status);
     const data = await res.json();
-    console.log('Pet detail data:', data);
 
     if (!data.pet) {
       container.innerHTML = '<div class="alert alert-warning text-center">Pet not found or not available.</div>';
@@ -241,7 +213,6 @@ async function loadPetDetail() {
 
     const pet = data.pet;
 
-    // Adopt button now links to adopt.html with pet_id in URL
     const adoptButton = getCurrentUser()
       ? `<a href="/static/adopt.html?pet_id=${pet.id}" class="btn btn-success btn-lg px-5">Adopt ${pet.name}</a>`
       : `<a href="/static/login.html" class="btn btn-outline-warning btn-lg w-100 py-3 fw-bold">Login to Adopt ${pet.name}</a>`;
@@ -249,8 +220,8 @@ async function loadPetDetail() {
     container.innerHTML = `
       <div class="row g-5">
         <div class="col-lg-6">
-          <img src="${pet.image_url || 'https://placehold.co/600x400?text=No+Image'}" 
-               class="img-fluid rounded-4 shadow" alt="${pet.name}" 
+          <img src="${pet.image_url || 'https://placehold.co/600x400?text=No+Image'}"
+               class="img-fluid rounded-4 shadow" alt="${pet.name}"
                style="max-height:500px; object-fit:cover;">
         </div>
         <div class="col-lg-6">
@@ -276,6 +247,7 @@ async function loadPetDetail() {
     container.innerHTML = '<div class="alert alert-danger text-center">Error loading pet details. Please try again.</div>';
   }
 }
+
 // ========================================
 // ADOPTION APPLICATION FORM (adopt.html)
 // ========================================
@@ -287,20 +259,10 @@ if (adoptionForm) {
     const urlParams = new URLSearchParams(window.location.search);
     const pet_id = urlParams.get("pet_id");
 
-    // Read values (IDs match your HTML exactly)
     const full_name = document.getElementById("full_name")?.value.trim() || '';
     const phone = document.getElementById("phone")?.value.trim() || '';
     const address = document.getElementById("address")?.value.trim() || '';
     const message = document.getElementById("message")?.value.trim() || '';
-
-    // DEBUG: log exactly what JS sees
-    console.log("=== Form submit debug ===");
-    console.log("pet_id from URL:", pet_id);
-    console.log("full_name:", full_name);
-    console.log("phone:", phone);
-    console.log("address:", address);
-    console.log("message:", message);
-    console.log("====================");
 
     const user = getCurrentUser();
 
@@ -315,12 +277,8 @@ if (adoptionForm) {
       return;
     }
 
-    // Validation: allow if fields have at least 1 character after trim
-    if (!full_name || full_name.length < 1 ||
-        !phone || phone.length < 1 ||
-        !address || address.length < 1 ||
-        !message || message.length < 1) {
-      document.getElementById("formMessage").innerHTML = 
+    if (!full_name || !phone || !address || !message) {
+      document.getElementById("formMessage").innerHTML =
         '<div class="alert alert-warning">Please fill all fields completely!</div>';
       return;
     }
@@ -348,165 +306,30 @@ if (adoptionForm) {
         throw new Error(data.error || data.message || "Failed to submit application");
       }
 
-      document.getElementById("formMessage").innerHTML = 
-        '<div class="alert alert-success">Application submitted successfully! We will contact you soon.</div>';
+      document.getElementById("formMessage").innerHTML =
+        '<div class="alert alert-success">✅ Application submitted successfully! We will contact you soon.</div>';
 
-      adoptionForm.reset();  // Clear form
+      adoptionForm.reset();
 
     } catch (error) {
       console.error("Adoption submit error:", error);
-      document.getElementById("formMessage").innerHTML = 
+      document.getElementById("formMessage").innerHTML =
         `<div class="alert alert-danger">${error.message}</div>`;
     }
   });
 }
+
 // ================================
 // PAGE LOAD - RUN ON EVERY PAGE
 // ================================
 document.addEventListener('DOMContentLoaded', () => {
   updateNavbar();
 
-  // Load pets if on index page
   if (document.getElementById('featured-pets') || document.getElementById('pets-container')) {
     loadFeaturedPets();
   }
 
-  // Load pet detail if on detail page
   if (document.getElementById('pet-detail')) {
     loadPetDetail();
   }
-
-  // Adoption form is handled separately on adopt.html
-});
-
-// ========================================
-// ADMIN DASHBOARD - LOAD STATS & PETS
-// ========================================
-async function loadAdminDashboard() {
-  if (!isAdmin()) {
-    alert("Access denied. Admin only.");
-    location.href = "/static/index.html";
-    return;
-  }
-
-  // Load stats
-  loadDashboardStats();
-
-  // Load pets table
-  const tbody = document.getElementById('petsTableBody');
-  if (!tbody) return;
-
-  tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="spinner-border text-success"></div> Loading pets...</td></tr>';
-
-  try {
-    const res = await fetch('/api/pets');
-    const data = await res.json();
-
-    if (!data.pets || data.pets.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4">No pets found.</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = '';
-
-    data.pets.forEach(pet => {
-      const row = `
-        <tr>
-          <td>${pet.name}</td>
-          <td>${pet.breed || 'N/A'}</td>
-          <td>${pet.age}</td>
-          <td><span class="badge bg-${pet.status === 'available' ? 'success' : 'secondary'}">${pet.status}</span></td>
-          <td>
-            <button class="btn btn-sm btn-outline-primary me-1"><i class="fas fa-edit"></i></button>
-            <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-          </td>
-        </tr>
-      `;
-      tbody.innerHTML += row;
-    });
-  } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger">Error loading pets.</td></tr>';
-    console.error(err);
-  }
-}
-
-// Load overview stats (total pets, users, etc.)
-async function loadDashboardStats() {
-  try {
-    const petsRes = await fetch('/api/pets');
-    const petsData = await petsRes.json();
-    document.getElementById('totalPets').textContent = petsData.pets ? petsData.pets.length : 0;
-
-    // Total users (you can add /api/users if needed)
-    // For now placeholder
-    document.getElementById('totalUsers').textContent = 'N/A';
-
-    // Adoptions placeholder
-    document.getElementById('totalAdoptions').textContent = 'Coming Soon';
-  } catch (err) {
-    console.error('Stats error:', err);
-  }
-}
-
-// Check if user is admin
-function isAdmin() {
-  const user = getCurrentUser();
-  return user && user.role === 'admin';
-}
-
-// Add New Pet (modal save button)
-document.addEventListener('click', async (e) => {
-  if (e.target.id === 'savePetBtn') {
-    e.preventDefault();
-
-    const user = getCurrentUser();
-    if (!user || user.role !== 'admin') {
-      alert("Admin access required");
-      return;
-    }
-
-    const pet = {
-      name: document.getElementById('name').value.trim(),
-      species: document.getElementById('species').value,
-      breed: document.getElementById('breed').value.trim(),
-      age: parseInt(document.getElementById('age').value),
-      description: document.getElementById('description').value.trim(),
-      location: document.getElementById('location').value.trim(),
-      image_url: document.getElementById('image_url').value.trim(),
-      status: 'available',
-      posted_by: user.id
-    };
-
-    if (!pet.name || !pet.species || !pet.age || !pet.description || !pet.location || !pet.image_url) {
-      alert("Please fill all required fields");
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/pets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pet)
-      });
-
-      if (!res.ok) throw new Error('Failed to add pet');
-
-      alert("Pet added successfully!");
-      bootstrap.Modal.getInstance(document.getElementById('addPetModal')).hide();
-      loadAdminDashboard(); // Refresh list
-    } catch (err) {
-      alert("Error: " + err.message);
-    }
-  }
-});
-
-// Run on page load
-document.addEventListener('DOMContentLoaded', () => {
-  updateNavbar();
-
-  if (document.getElementById('petsTableBody')) {
-    loadAdminDashboard();
-  }
-
-  // Other page loads...
 });
