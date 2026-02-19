@@ -378,3 +378,135 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Adoption form is handled separately on adopt.html
 });
+
+// ========================================
+// ADMIN DASHBOARD - LOAD STATS & PETS
+// ========================================
+async function loadAdminDashboard() {
+  if (!isAdmin()) {
+    alert("Access denied. Admin only.");
+    location.href = "/static/index.html";
+    return;
+  }
+
+  // Load stats
+  loadDashboardStats();
+
+  // Load pets table
+  const tbody = document.getElementById('petsTableBody');
+  if (!tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="spinner-border text-success"></div> Loading pets...</td></tr>';
+
+  try {
+    const res = await fetch('/api/pets');
+    const data = await res.json();
+
+    if (!data.pets || data.pets.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4">No pets found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = '';
+
+    data.pets.forEach(pet => {
+      const row = `
+        <tr>
+          <td>${pet.name}</td>
+          <td>${pet.breed || 'N/A'}</td>
+          <td>${pet.age}</td>
+          <td><span class="badge bg-${pet.status === 'available' ? 'success' : 'secondary'}">${pet.status}</span></td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary me-1"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+      `;
+      tbody.innerHTML += row;
+    });
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger">Error loading pets.</td></tr>';
+    console.error(err);
+  }
+}
+
+// Load overview stats (total pets, users, etc.)
+async function loadDashboardStats() {
+  try {
+    const petsRes = await fetch('/api/pets');
+    const petsData = await petsRes.json();
+    document.getElementById('totalPets').textContent = petsData.pets ? petsData.pets.length : 0;
+
+    // Total users (you can add /api/users if needed)
+    // For now placeholder
+    document.getElementById('totalUsers').textContent = 'N/A';
+
+    // Adoptions placeholder
+    document.getElementById('totalAdoptions').textContent = 'Coming Soon';
+  } catch (err) {
+    console.error('Stats error:', err);
+  }
+}
+
+// Check if user is admin
+function isAdmin() {
+  const user = getCurrentUser();
+  return user && user.role === 'admin';
+}
+
+// Add New Pet (modal save button)
+document.addEventListener('click', async (e) => {
+  if (e.target.id === 'savePetBtn') {
+    e.preventDefault();
+
+    const user = getCurrentUser();
+    if (!user || user.role !== 'admin') {
+      alert("Admin access required");
+      return;
+    }
+
+    const pet = {
+      name: document.getElementById('name').value.trim(),
+      species: document.getElementById('species').value,
+      breed: document.getElementById('breed').value.trim(),
+      age: parseInt(document.getElementById('age').value),
+      description: document.getElementById('description').value.trim(),
+      location: document.getElementById('location').value.trim(),
+      image_url: document.getElementById('image_url').value.trim(),
+      status: 'available',
+      posted_by: user.id
+    };
+
+    if (!pet.name || !pet.species || !pet.age || !pet.description || !pet.location || !pet.image_url) {
+      alert("Please fill all required fields");
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/pets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pet)
+      });
+
+      if (!res.ok) throw new Error('Failed to add pet');
+
+      alert("Pet added successfully!");
+      bootstrap.Modal.getInstance(document.getElementById('addPetModal')).hide();
+      loadAdminDashboard(); // Refresh list
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+  }
+});
+
+// Run on page load
+document.addEventListener('DOMContentLoaded', () => {
+  updateNavbar();
+
+  if (document.getElementById('petsTableBody')) {
+    loadAdminDashboard();
+  }
+
+  // Other page loads...
+});

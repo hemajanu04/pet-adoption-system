@@ -295,7 +295,16 @@ def dashboard_stats():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+@app.route('/api/pets', methods=['POST'])
+def add_pet():
+    try:
+        data = request.get_json()
+        # Optional: check if user is admin (from token or session)
+        # For now, just insert
+        result = supabase.table("pets").insert(data).execute()
+        return jsonify({"message": "Pet added", "id": result.data[0]['id']}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
