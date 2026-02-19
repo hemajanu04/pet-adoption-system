@@ -116,13 +116,13 @@ def protected():
 def get_pets():
     try:
         query = supabase.table("pets") \
-            .select("*", count="exact") \
+            .select("""
+                *,
+                species(name),
+                breeds(name)
+            """, count="exact") \
             .eq("is_active", True) \
             .eq("status", "available")
-
-        species = request.args.get('species')
-        if species:
-            query = query.eq("species", species)
 
         limit = request.args.get('limit', default=12, type=int)
         page = request.args.get('page', default=1, type=int)
@@ -139,6 +139,7 @@ def get_pets():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 
 # ─────────────────────────────
@@ -163,8 +164,6 @@ def get_pet_detail(pet_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
 # ─────────────────────────────
 # ==============================
 # CREATE ADOPTION REQUEST
@@ -195,6 +194,108 @@ def create_adoption_request():
         return jsonify({
             "message": str(e)
         }), 500
+    
+@app.route('/api/adoption-requests', methods=['GET'])
+def get_adoption_requests():
+    try:
+        result = supabase.table("adoption_requests") \
+            .select("""
+                *,
+                pets(name),
+                profiles(role)
+            """) \
+            .execute()
+
+        return jsonify(result.data)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/adoption-requests/<int:request_id>', methods=['PUT'])
+def update_adoption_status(request_id):
+    try:
+        data = request.get_json()
+        new_status = data.get("status")
+
+        # Update adoption request
+        supabase.table("adoption_requests") \
+            .update({"status": new_status}) \
+            .eq("id", request_id) \
+            .execute()
+
+        # If approved → mark pet as adopted
+        if new_status == "approved":
+            request_data = supabase.table("adoption_requests") \
+                .select("pet_id") \
+                .eq("id", request_id) \
+                .single() \
+                .execute()
+
+            pet_id = request_data.data["pet_id"]
+
+            supabase.table("pets") \
+                .update({
+                    "status": "adopted",
+                    "is_active": False
+                }) \
+                .eq("id", pet_id) \
+                .execute()
+
+        return jsonify({"message": "Status updated successfully"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/species', methods=['GET'])
+def get_species():
+    response = supabase.table("species").select("*").execute()
+    return jsonify(response.data)
+
+# ==============================
+# ADMIN DASHBOARD STATS
+# ==============================
+@app.route('/api/dashboard', methods=['GET'])
+@require_auth
+def dashboard_stats():
+    if g.role != "admin":
+        return jsonify({"error": "Access denied"}), 403
+    try:
+        total_pets = supabase.table("pets") \
+            .select("id", count="exact") \
+            .execute()
+
+        available_pets = supabase.table("pets") \
+            .select("id", count="exact") \
+            .eq("status", "available") \
+            .execute()
+
+        adopted_pets = supabase.table("pets") \
+            .select("id", count="exact") \
+            .eq("status", "adopted") \
+            .execute()
+
+        total_requests = supabase.table("adoption_requests") \
+            .select("id", count="exact") \
+            .execute()
+
+        pending_requests = supabase.table("adoption_requests") \
+            .select("id", count="exact") \
+            .eq("status", "pending") \
+            .execute()
+
+        return jsonify({
+            "total_pets": total_pets.count,
+            "available_pets": available_pets.count,
+            "adopted_pets": adopted_pets.count,
+            "total_requests": total_requests.count,
+            "pending_requests": pending_requests.count
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
     
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
