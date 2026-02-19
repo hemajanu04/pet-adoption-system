@@ -89,7 +89,6 @@ def health():
             .limit(0)
             .execute()
         )
-
         return jsonify({
             "status": "healthy",
             "database_connected": True,
@@ -97,16 +96,6 @@ def health():
         })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-
-
-@app.route('/api/protected')
-@require_auth
-def protected():
-    return jsonify({
-        "message": "You are authenticated!",
-        "user_id": g.user_id,
-        "role": g.role
-    })
 
 
 # ─────────────────────────────
@@ -119,7 +108,8 @@ def get_pets():
             .select("""
                 *,
                 species(name),
-                breeds(name)
+                breeds(name),
+                shelters(id, name, address, phone, logo_url)
             """, count="exact") \
             .eq("is_active", True) \
             .eq("status", "available")
@@ -141,7 +131,6 @@ def get_pets():
         return jsonify({"error": str(e)}), 500
 
 
-
 # ─────────────────────────────
 # GET SINGLE PET
 # ─────────────────────────────
@@ -149,7 +138,12 @@ def get_pets():
 def get_pet_detail(pet_id):
     try:
         result = supabase.table("pets") \
-            .select("*") \
+            .select("""
+                *,
+                species(name),
+                breeds(name),
+                shelters(id, name, address, phone, email, logo_url, description)
+            """) \
             .eq("id", pet_id) \
             .eq("is_active", True) \
             .single() \
@@ -158,27 +152,75 @@ def get_pet_detail(pet_id):
         if not result.data:
             return jsonify({"error": "Pet not found"}), 404
 
+        return jsonify({"pet": result.data})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────
+# GET ALL SHELTERS
+# ─────────────────────────────
+@app.route('/api/shelters', methods=['GET'])
+def get_shelters():
+    try:
+        result = supabase.table("shelters") \
+            .select("*") \
+            .order("name") \
+            .execute()
+
         return jsonify({
-            "pet": result.data
+            "shelters": result.data or []
         })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
 # ─────────────────────────────
-# ==============================
+# GET SINGLE SHELTER + ITS PETS
+# ─────────────────────────────
+@app.route('/api/shelters/<shelter_id>', methods=['GET'])
+def get_shelter_detail(shelter_id):
+    try:
+        # Get shelter info
+        shelter_result = supabase.table("shelters") \
+            .select("*") \
+            .eq("id", shelter_id) \
+            .single() \
+            .execute()
+
+        if not shelter_result.data:
+            return jsonify({"error": "Shelter not found"}), 404
+
+        # Get pets belonging to this shelter
+        pets_result = supabase.table("pets") \
+            .select("*, species(name)") \
+            .eq("shelter_id", shelter_id) \
+            .eq("is_active", True) \
+            .eq("status", "available") \
+            .execute()
+
+        return jsonify({
+            "shelter": shelter_result.data,
+            "pets": pets_result.data or []
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────
 # CREATE ADOPTION REQUEST
-# ==============================
+# ─────────────────────────────
 @app.route("/api/adopt", methods=["POST"])
 def create_adoption_request():
     try:
         data = request.get_json()
 
-        user_id = data.get("user_id")
-        pet_id = data.get("pet_id")
-
         response = supabase.table("adoption_requests").insert({
-            "user_id": user_id,
-            "pet_id": pet_id,
+            "user_id": data.get("user_id"),
+            "pet_id": data.get("pet_id"),
             "full_name": data.get("full_name"),
             "phone": data.get("phone"),
             "address": data.get("address"),
@@ -186,63 +228,19 @@ def create_adoption_request():
             "status": "pending"
         }).execute()
 
-        return jsonify({
-            "message": "Adoption request submitted successfully"
-        }), 201
+        return jsonify({"message": "Adoption request submitted successfully"}), 201
 
     except Exception as e:
-        return jsonify({
-            "message": str(e)
-        }), 500
-    
+        return jsonify({"message": str(e)}), 500
+
+
 @app.route('/api/adoption-requests', methods=['GET'])
 def get_adoption_requests():
     try:
         result = supabase.table("adoption_requests") \
-            .select("""
-                *,
-                pets(name),
-                profiles(role)
-            """) \
+            .select("*, pets(name), profiles(role)") \
             .execute()
-
         return jsonify(result.data)
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/adoption-requests/<int:request_id>', methods=['PUT'])
-def update_adoption_status(request_id):
-    try:
-        data = request.get_json()
-        new_status = data.get("status")
-
-        # Update adoption request
-        supabase.table("adoption_requests") \
-            .update({"status": new_status}) \
-            .eq("id", request_id) \
-            .execute()
-
-        # If approved → mark pet as adopted
-        if new_status == "approved":
-            request_data = supabase.table("adoption_requests") \
-                .select("pet_id") \
-                .eq("id", request_id) \
-                .single() \
-                .execute()
-
-            pet_id = request_data.data["pet_id"]
-
-            supabase.table("pets") \
-                .update({
-                    "status": "adopted",
-                    "is_active": False
-                }) \
-                .eq("id", pet_id) \
-                .execute()
-
-        return jsonify({"message": "Status updated successfully"})
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -252,57 +250,126 @@ def get_species():
     response = supabase.table("species").select("*").execute()
     return jsonify(response.data)
 
-# ==============================
-# ADMIN DASHBOARD STATS
-# ==============================
-@app.route('/api/dashboard', methods=['GET'])
-@require_auth
-def dashboard_stats():
-    if g.role != "admin":
-        return jsonify({"error": "Access denied"}), 403
-    try:
-        total_pets = supabase.table("pets") \
-            .select("id", count="exact") \
-            .execute()
-
-        available_pets = supabase.table("pets") \
-            .select("id", count="exact") \
-            .eq("status", "available") \
-            .execute()
-
-        adopted_pets = supabase.table("pets") \
-            .select("id", count="exact") \
-            .eq("status", "adopted") \
-            .execute()
-
-        total_requests = supabase.table("adoption_requests") \
-            .select("id", count="exact") \
-            .execute()
-
-        pending_requests = supabase.table("adoption_requests") \
-            .select("id", count="exact") \
-            .eq("status", "pending") \
-            .execute()
-
-        return jsonify({
-            "total_pets": total_pets.count,
-            "available_pets": available_pets.count,
-            "adopted_pets": adopted_pets.count,
-            "total_requests": total_requests.count,
-            "pending_requests": pending_requests.count
-        })
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/pets', methods=['POST'])
 def add_pet():
     try:
         data = request.get_json()
-        # Optional: check if user is admin (from token or session)
-        # For now, just insert
         result = supabase.table("pets").insert(data).execute()
         return jsonify({"message": "Pet added", "id": result.data[0]['id']}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────
+# CREATE DONATION
+# ─────────────────────────────
+@app.route('/api/donations', methods=['POST'])
+def create_donation():
+    try:
+        data = request.get_json()
+
+        result = supabase.table("donations").insert({
+            "donor_id": data.get("donor_id"),
+            "shelter_id": data.get("shelter_id"),
+            "pet_id": data.get("pet_id"),
+            "amount": data.get("amount"),
+            "currency": data.get("currency", "INR"),
+            "payment_method": data.get("payment_method", "upi"),
+            "status": "completed",
+            "donated_at": "now()"
+        }).execute()
+
+        return jsonify({"message": "Donation recorded successfully!"}), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────
+# GET RECENT DONATIONS
+# ─────────────────────────────
+@app.route('/api/donations/recent', methods=['GET'])
+def get_recent_donations():
+    try:
+        result = supabase.table("donations") \
+            .select("amount, donated_at, shelter_id, donor_id, shelters(name)") \
+            .eq("status", "completed") \
+            .order("donated_at", desc=True) \
+            .limit(5) \
+            .execute()
+
+        donations = result.data or []
+
+        for d in donations:
+            try:
+                if d.get("donor_id"):
+                    profile = supabase.table("profiles") \
+                        .select("full_name") \
+                        .eq("id", d["donor_id"]) \
+                        .execute()
+                    if profile.data and len(profile.data) > 0:
+                        d["donor_name"] = profile.data[0].get("full_name") or "Anonymous"
+                    else:
+                        d["donor_name"] = "Anonymous"
+                else:
+                    d["donor_name"] = "Anonymous"
+            except:
+                d["donor_name"] = "Anonymous"
+
+        return jsonify({"donations": donations})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+# ─────────────────────────────
+# GET USER'S ADOPTION APPLICATIONS
+# ─────────────────────────────
+@app.route('/api/my-adoptions/<user_id>', methods=['GET'])
+def get_my_adoptions(user_id):
+    try:
+        result = supabase.table("adoption_requests") \
+            .select("*, pets(name, breed, image_url)") \
+            .eq("user_id", user_id) \
+            .order("created_at", desc=True) \
+            .execute()
+        return jsonify({"applications": result.data or []})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ─────────────────────────────
+# SEND MESSAGE
+# ─────────────────────────────
+@app.route('/api/messages', methods=['POST'])
+def send_message():
+    try:
+        data = request.get_json()
+        result = supabase.table("messages").insert({
+            "sender_id": data.get("sender_id"),
+            "receiver_id": data.get("receiver_id"),
+            "content": data.get("content"),
+            "is_read": False,
+            "sent_at": "now()"
+        }).execute()
+        return jsonify({"message": "Message sent!"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────
+# GET MESSAGES BETWEEN USER & SHELTER
+# ─────────────────────────────
+@app.route('/api/messages/<user_id>/<shelter_id>', methods=['GET'])
+def get_messages(user_id, shelter_id):
+    try:
+        result = supabase.table("messages") \
+            .select("*") \
+            .or_(
+                f"and(sender_id.eq.{user_id},receiver_id.eq.{shelter_id}),"
+                f"and(sender_id.eq.{shelter_id},receiver_id.eq.{user_id})"
+            ) \
+            .order("sent_at") \
+            .execute()
+        return jsonify({"messages": result.data or []})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     

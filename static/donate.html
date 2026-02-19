@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Donate - PetPaw</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+  <style>
+    .amount-btn { cursor: pointer; transition: all 0.2s; }
+    .amount-btn.active { background-color: #198754; color: white; border-color: #198754; }
+    .payment-option { cursor: pointer; border: 2px solid #dee2e6; border-radius: 12px; padding: 12px; transition: all 0.2s; }
+    .payment-option.active { border-color: #198754; background-color: #f0fff4; }
+    .payment-option img { height: 30px; object-fit: contain; }
+  </style>
+</head>
+<body class="bg-light">
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <div class="container">
+      <a class="navbar-brand fw-bold text-success" href="/static/index.html">
+        <i class="fas fa-paw me-2"></i>PetPaw
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="/static/index.html">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="/static/shelters.html">Shelters</a></li>
+          <li class="nav-item"><a class="nav-link active" href="/static/donate.html">Donate</a></li>
+          <li class="nav-item"><a class="nav-link" href="/static/my-adoptions.html">My Adoptions</a></li>
+          <li class="nav-item"><a class="nav-link" href="/static/contact-shelter.html">Contact</a></li>
+          <li class="nav-item"><a class="nav-link" href="/static/login.html">Login</a></li>
+          <li class="nav-item">
+            <a class="nav-link btn btn-success text-white ms-3 px-4" href="/static/register.html">Register</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="bg-success text-white text-center py-4">
+    <div class="container">
+      <h2 class="fw-bold mb-1"><i class="fas fa-heart me-2"></i>Make a Donation</h2>
+      <p class="mb-0">Your generosity helps animals find their forever homes</p>
+    </div>
+  </section>
+
+  <div class="container py-5">
+    <div class="row justify-content-center g-4">
+
+      <!-- Donation Form -->
+      <div class="col-lg-7">
+        <div class="card shadow-sm border-0 rounded-4 p-4">
+          <h5 class="fw-bold mb-4">Donation Details</h5>
+
+          <!-- Donate To -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">Donate To</label>
+            <div class="row g-2">
+              <div class="col-6">
+                <div class="payment-option active text-center" id="opt-general" onclick="selectDonationType('general')">
+                  <i class="fas fa-paw text-success fs-4 mb-1"></i>
+                  <p class="mb-0 fw-bold small">PetPaw General Fund</p>
+                  <small class="text-muted">Support all animals</small>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="payment-option text-center" id="opt-shelter" onclick="selectDonationType('shelter')">
+                  <i class="fas fa-home text-success fs-4 mb-1"></i>
+                  <p class="mb-0 fw-bold small">Specific Shelter</p>
+                  <small class="text-muted">Support a shelter</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Shelter Dropdown (hidden by default) -->
+          <div class="mb-4" id="shelterDropdown" style="display:none;">
+            <label class="form-label fw-bold">Select Shelter</label>
+            <select class="form-select" id="shelterSelect">
+              <option value="">Loading shelters...</option>
+            </select>
+          </div>
+
+          <!-- Amount -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">Select Amount (INR ₹)</label>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <button class="btn btn-outline-success amount-btn" onclick="selectAmount(100)">₹100</button>
+              <button class="btn btn-outline-success amount-btn" onclick="selectAmount(250)">₹250</button>
+              <button class="btn btn-outline-success amount-btn" onclick="selectAmount(500)">₹500</button>
+              <button class="btn btn-outline-success amount-btn" onclick="selectAmount(1000)">₹1000</button>
+              <button class="btn btn-outline-success amount-btn" onclick="selectAmount(2000)">₹2000</button>
+            </div>
+            <input type="number" class="form-control" id="amountInput" placeholder="Or enter custom amount" min="1">
+          </div>
+
+          <!-- Payment Method -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">Payment Method</label>
+            <div class="row g-2">
+              <div class="col-4">
+                <div class="payment-option active text-center" id="pm-upi" onclick="selectPayment('upi')">
+                  <i class="fas fa-mobile-alt text-success fs-5 mb-1"></i>
+                  <p class="mb-0 small fw-bold">UPI</p>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="payment-option text-center" id="pm-card" onclick="selectPayment('card')">
+                  <i class="fas fa-credit-card text-success fs-5 mb-1"></i>
+                  <p class="mb-0 small fw-bold">Card</p>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="payment-option text-center" id="pm-netbanking" onclick="selectPayment('netbanking')">
+                  <i class="fas fa-university text-success fs-5 mb-1"></i>
+                  <p class="mb-0 small fw-bold">Net Banking</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- UPI Fields -->
+          <div id="upi-fields" class="mb-4">
+            <label class="form-label fw-bold">UPI ID</label>
+            <input type="text" class="form-control" id="upiId" placeholder="yourname@upi">
+          </div>
+
+          <!-- Card Fields -->
+          <div id="card-fields" class="mb-4" style="display:none;">
+            <div class="mb-3">
+              <label class="form-label fw-bold">Card Number</label>
+              <input type="text" class="form-control" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19">
+            </div>
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label fw-bold">Expiry</label>
+                <input type="text" class="form-control" id="cardExpiry" placeholder="MM/YY" maxlength="5">
+              </div>
+              <div class="col-6">
+                <label class="form-label fw-bold">CVV</label>
+                <input type="password" class="form-control" id="cardCvv" placeholder="***" maxlength="3">
+              </div>
+            </div>
+          </div>
+
+          <!-- Net Banking Fields -->
+          <div id="netbanking-fields" class="mb-4" style="display:none;">
+            <label class="form-label fw-bold">Select Bank</label>
+            <select class="form-select" id="bankSelect">
+              <option value="">Choose your bank</option>
+              <option>State Bank of India</option>
+              <option>HDFC Bank</option>
+              <option>ICICI Bank</option>
+              <option>Axis Bank</option>
+              <option>Kotak Mahindra Bank</option>
+              <option>Punjab National Bank</option>
+            </select>
+          </div>
+
+          <!-- Message -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">Message (Optional)</label>
+            <textarea class="form-control" id="donationMessage" rows="2" placeholder="Leave a kind message..."></textarea>
+          </div>
+
+          <div id="donationResult" class="mb-3"></div>
+
+          <button class="btn btn-success w-100 py-3 fw-bold fs-5" onclick="submitDonation()">
+            <i class="fas fa-heart me-2"></i>Donate Now
+          </button>
+          <p class="text-muted text-center small mt-2">🔒 This is a simulated payment — no real money is charged</p>
+        </div>
+      </div>
+
+      <!-- Side Info -->
+      <div class="col-lg-4">
+        <!-- Impact Card -->
+        <div class="card border-0 bg-success text-white rounded-4 p-4 mb-4">
+          <h5 class="fw-bold mb-3"><i class="fas fa-star me-2"></i>Your Impact</h5>
+          <div class="mb-3">
+            <p class="mb-1 fw-bold">₹100</p>
+            <p class="small mb-0">Feeds a shelter pet for a week</p>
+          </div>
+          <div class="mb-3">
+            <p class="mb-1 fw-bold">₹500</p>
+            <p class="small mb-0">Covers basic medical checkup</p>
+          </div>
+          <div class="mb-3">
+            <p class="mb-1 fw-bold">₹1000</p>
+            <p class="small mb-0">Provides vaccinations for 2 pets</p>
+          </div>
+          <div>
+            <p class="mb-1 fw-bold">₹2000+</p>
+            <p class="small mb-0">Sponsors a pet's full monthly care</p>
+          </div>
+        </div>
+
+        <!-- Recent Donations -->
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+          <h6 class="fw-bold mb-3"><i class="fas fa-history text-success me-2"></i>Recent Donations</h6>
+          <div id="recentDonations">
+            <div class="text-center py-3">
+              <div class="spinner-border spinner-border-sm text-success"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 rounded-4">
+        <div class="modal-body text-center p-5">
+          <div class="mb-3" style="font-size:4rem;">🎉</div>
+          <h4 class="fw-bold text-success">Thank You!</h4>
+          <p class="text-muted" id="successMessage">Your donation has been recorded successfully.</p>
+          <a href="/static/index.html" class="btn btn-success px-4">Back to Home</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-white text-center py-4 mt-5">
+    <p>© 2026 PetPaw - Made with ❤️ for animals</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/static/js/main.js"></script>
+  <script>
+    let selectedAmount = null;
+    let selectedPayment = 'upi';
+    let donationType = 'general';
+
+    // Load shelters into dropdown
+    async function loadShelterOptions() {
+      try {
+        const res = await fetch('/api/shelters');
+        const data = await res.json();
+        const select = document.getElementById('shelterSelect');
+        select.innerHTML = '<option value="">-- Select a shelter --</option>';
+        (data.shelters || []).forEach(s => {
+          select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    // Load recent donations
+    async function loadRecentDonations() {
+      try {
+        const res = await fetch('/api/donations/recent');
+        const data = await res.json();
+        const container = document.getElementById('recentDonations');
+
+        if (!data.donations || data.donations.length === 0) {
+          container.innerHTML = '<p class="text-muted small text-center">No donations yet. Be the first!</p>';
+          return;
+        }
+
+        container.innerHTML = data.donations.map(d => `
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+            <div>
+              <p class="mb-0 small fw-bold">${d.donor_name || 'Anonymous'}</p>
+              <p class="mb-0 text-muted" style="font-size:11px;">${d.shelters?.name || 'General Fund'}</p>
+            </div>
+            <span class="badge bg-success">₹${d.amount}</span>
+          </div>
+        `).join('');
+      } catch (e) {
+        document.getElementById('recentDonations').innerHTML = '<p class="text-muted small text-center">Unable to load.</p>';
+      }
+    }
+
+    function selectDonationType(type) {
+      donationType = type;
+      document.getElementById('opt-general').classList.toggle('active', type === 'general');
+      document.getElementById('opt-shelter').classList.toggle('active', type === 'shelter');
+      document.getElementById('shelterDropdown').style.display = type === 'shelter' ? 'block' : 'none';
+    }
+
+    function selectAmount(val) {
+      selectedAmount = val;
+      document.getElementById('amountInput').value = val;
+      document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    function selectPayment(method) {
+      selectedPayment = method;
+      ['upi', 'card', 'netbanking'].forEach(m => {
+        document.getElementById(`pm-${m}`).classList.toggle('active', m === method);
+        document.getElementById(`${m}-fields`).style.display = m === method ? 'block' : 'none';
+      });
+    }
+
+    async function submitDonation() {
+      const user = getCurrentUser();
+      if (!user) {
+        alert('Please login to donate!');
+        location.href = '/static/login.html';
+        return;
+      }
+
+      const amount = parseFloat(document.getElementById('amountInput').value);
+      if (!amount || amount < 1) {
+        document.getElementById('donationResult').innerHTML =
+          '<div class="alert alert-warning">Please select or enter a valid amount.</div>';
+        return;
+      }
+
+      const shelterId = donationType === 'shelter'
+        ? document.getElementById('shelterSelect').value
+        : null;
+
+      if (donationType === 'shelter' && !shelterId) {
+        document.getElementById('donationResult').innerHTML =
+          '<div class="alert alert-warning">Please select a shelter.</div>';
+        return;
+      }
+
+      // Simulate payment processing
+      document.getElementById('donationResult').innerHTML =
+        '<div class="alert alert-info"><div class="spinner-border spinner-border-sm me-2"></div>Processing payment...</div>';
+
+      await new Promise(resolve => setTimeout(resolve, 1500)); // simulate delay
+
+      try {
+        const res = await fetch('/api/donations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+          },
+          body: JSON.stringify({
+            donor_id: user.id,
+            shelter_id: shelterId || null,
+            amount: amount,
+            currency: 'INR',
+            payment_method: selectedPayment,
+            status: 'completed'
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Donation failed');
+
+        document.getElementById('successMessage').textContent =
+          `Your donation of ₹${amount} has been recorded. Thank you for your kindness! 🐾`;
+        new bootstrap.Modal(document.getElementById('successModal')).show();
+        document.getElementById('donationResult').innerHTML = '';
+        loadRecentDonations();
+
+      } catch (err) {
+        document.getElementById('donationResult').innerHTML =
+          `<div class="alert alert-danger">${err.message}</div>`;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadShelterOptions();
+      loadRecentDonations();
+    });
+  </script>
+</body>
+</html>
