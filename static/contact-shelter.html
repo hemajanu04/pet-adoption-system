@@ -6,146 +6,167 @@
   <title>Contact Shelter - PetPaw</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/style.css"/>
   <style>
-    .message-bubble {
-      max-width: 75%;
-      border-radius: 18px;
-      padding: 10px 16px;
-      margin-bottom: 8px;
-      word-wrap: break-word;
-    }
-    .message-sent {
-      background-color: #198754;
-      color: white;
-      margin-left: auto;
-      border-bottom-right-radius: 4px;
-    }
-    .message-received {
-      background-color: #f0f0f0;
-      color: #333;
-      margin-right: auto;
-      border-bottom-left-radius: 4px;
-    }
-    .chat-box {
-      height: 420px;
-      overflow-y: auto;
-      background: #fafafa;
-      border-radius: 16px;
-      padding: 20px;
-      border: 1px solid #e0e0e0;
-    }
-    .shelter-card { border-left: 4px solid #198754; }
+    :root { --coral:#ff6b6b; --coral-dark:#e85555; --purple:#7c3aed; --gold:#f59e0b; --teal:#0d9488; --dark:#1e1b4b; --text:#374151; --muted:#9ca3af; }
+    body { font-family:'Plus Jakarta Sans',sans-serif; background:#fafafa; color:var(--text); }
+    .navbar { background:white !important; border-bottom:1px solid #f0f0f0; box-shadow:0 1px 12px rgba(0,0,0,0.06); }
+    .navbar-brand { font-family:'Fraunces',serif; font-size:1.5rem; color:var(--dark) !important; }
+
+    .hero { background:linear-gradient(135deg,#0f2027 0%,#203a43 50%,#2c5364 100%); padding:80px 0 100px; position:relative; overflow:hidden; }
+    .hero-blob { position:absolute; border-radius:50%; filter:blur(70px); opacity:0.3; }
+    .b1 { width:350px; height:350px; background:var(--coral); top:-80px; right:-60px; }
+    .b2 { width:250px; height:250px; background:var(--purple); bottom:-60px; left:-40px; }
+    .float-emoji { position:absolute; font-size:2.5rem; opacity:0.5; animation:float 4s ease-in-out infinite; }
+    .fe1 { top:20%; right:10%; } .fe2 { bottom:20%; right:5%; font-size:2rem; animation-delay:1.5s; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+    .hero-tag { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.12); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.95); border-radius:999px; padding:6px 18px; font-size:0.78rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:18px; }
+    .hero h1 { font-family:'Fraunces',serif; font-size:clamp(2rem,5vw,3.2rem); color:white; }
+    .hero h1 span { color:var(--gold); }
+    .hero p { color:rgba(255,255,255,0.78); font-size:1.05rem; }
+
+    .main-wrap { margin-top:-48px; position:relative; z-index:10; padding-bottom:60px; }
+
+    /* SHELTER SELECTOR */
+    .selector-card { background:white; border-radius:24px; box-shadow:0 8px 32px rgba(30,27,75,0.09); padding:28px; margin-bottom:20px; }
+    .slabel { font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--purple); margin-bottom:10px; }
+    .form-select { border:2px solid #e5e7eb; border-radius:14px; padding:13px 16px; font-size:0.93rem; font-family:'Plus Jakarta Sans',sans-serif; }
+    .form-select:focus { border-color:var(--purple); box-shadow:0 0 0 4px rgba(124,58,237,0.1); outline:none; }
+
+    /* SHELTER INFO */
+    .shelter-info-card { background:white; border-radius:24px; box-shadow:0 8px 32px rgba(30,27,75,0.09); overflow:hidden; }
+    .shelter-info-top { background:linear-gradient(135deg,var(--dark),#2d1b69); padding:24px; text-align:center; }
+    .shelter-av { width:70px; height:70px; border-radius:50%; border:3px solid rgba(255,255,255,0.3); object-fit:cover; }
+    .shelter-av-placeholder { width:70px; height:70px; border-radius:50%; background:linear-gradient(135deg,var(--coral),var(--purple)); display:flex; align-items:center; justify-content:center; font-size:1.8rem; margin:0 auto; border:3px solid rgba(255,255,255,0.3); }
+    .shelter-info-name { color:white; font-family:'Fraunces',serif; font-size:1.1rem; margin:10px 0 4px; }
+    .shelter-info-body { padding:18px; }
+    .info-row { display:flex; align-items:center; gap:8px; font-size:0.82rem; color:var(--text); margin-bottom:7px; }
+    .info-row i { color:var(--teal); width:16px; text-align:center; }
+
+    /* CHAT */
+    .chat-card { background:white; border-radius:24px; box-shadow:0 8px 32px rgba(30,27,75,0.09); overflow:hidden; height:100%; display:flex; flex-direction:column; }
+    .chat-header { background:linear-gradient(135deg,var(--coral),var(--coral-dark)); padding:20px 24px; display:flex; align-items:center; gap:12px; }
+    .chat-header-icon { width:42px; height:42px; background:rgba(255,255,255,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem; }
+    .chat-header h6 { color:white; font-weight:700; margin:0; font-size:1rem; }
+    .chat-header p { color:rgba(255,255,255,0.8); margin:0; font-size:0.78rem; }
+    .chat-box { flex:1; min-height:380px; max-height:420px; overflow-y:auto; padding:20px; background:#f8f9ff; }
+    .chat-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; min-height:280px; text-align:center; color:var(--muted); }
+    .chat-empty-icon { font-size:3rem; margin-bottom:12px; opacity:0.4; }
+    .msg-wrap { display:flex; margin-bottom:10px; }
+    .msg-bubble { max-width:72%; border-radius:18px; padding:10px 16px; word-wrap:break-word; }
+    .msg-sent { background:linear-gradient(135deg,var(--purple),#6d28d9); color:white; margin-left:auto; border-bottom-right-radius:4px; }
+    .msg-received { background:white; color:var(--text); border-bottom-left-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.07); }
+    .msg-time { font-size:10px; opacity:0.7; margin-top:3px; }
+    .chat-input-area { padding:16px 20px; background:white; border-top:1px solid #f0f0f0; display:none; gap:10px; align-items:center; }
+    .chat-input { flex:1; border:2px solid #e5e7eb; border-radius:999px; padding:12px 20px; font-size:0.9rem; font-family:'Plus Jakarta Sans',sans-serif; outline:none; transition:border 0.2s; }
+    .chat-input:focus { border-color:var(--purple); }
+    .btn-send { width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(--coral),var(--coral-dark)); border:none; color:white; font-size:1rem; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all 0.2s; box-shadow:0 3px 10px rgba(255,107,107,0.35); }
+    .btn-send:hover { transform:scale(1.08); }
+
+    /* EMPTY/LOCKED */
+    .locked-card { background:white; border-radius:24px; padding:60px 40px; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.05); }
+    .locked-icon { width:80px; height:80px; background:#f3f4f6; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2.2rem; margin:0 auto 16px; }
+    .btn-login { background:linear-gradient(135deg,var(--coral),var(--coral-dark)); color:white; border:none; border-radius:14px; padding:12px 32px; font-weight:700; text-decoration:none; display:inline-block; transition:all 0.2s; }
+    .btn-login:hover { color:white; transform:translateY(-2px); }
   </style>
 </head>
-<body class="bg-light">
-
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+<body>
+  <nav class="navbar navbar-expand-lg">
     <div class="container">
-      <a class="navbar-brand fw-bold text-success" href="/static/index.html">
-        <i class="fas fa-paw me-2"></i>PetPaw
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
+      <a class="navbar-brand" href="/static/index.html"><i class="fas fa-paw me-2 text-success"></i>PetPaw</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
+        <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item"><a class="nav-link" href="/static/index.html">Home</a></li>
           <li class="nav-item"><a class="nav-link" href="/static/shelters.html">Shelters</a></li>
           <li class="nav-item"><a class="nav-link" href="/static/donate.html">Donate</a></li>
           <li class="nav-item"><a class="nav-link" href="/static/my-adoptions.html">My Adoptions</a></li>
+          <li class="nav-item"><a class="nav-link" href="/static/my-favorites.html">❤️ Favorites</a></li>
+          <li class="nav-item"><a class="nav-link fw-bold" style="color:var(--coral);" href="/static/contact-shelter.html">Contact</a></li>
           <li class="nav-item"><a class="nav-link" href="/static/login.html">Login</a></li>
-          <li class="nav-item">
-            <a class="nav-link btn btn-success text-white ms-3 px-4" href="/static/register.html">Register</a>
-          </li>
+          <li class="nav-item ms-2"><a class="btn btn-success px-4 rounded-pill" href="/static/register.html">Register</a></li>
         </ul>
       </div>
     </div>
   </nav>
 
-  <!-- Header -->
-  <section class="bg-success text-white text-center py-4">
-    <div class="container">
-      <h2 class="fw-bold mb-1"><i class="fas fa-envelope me-2"></i>Contact a Shelter</h2>
-      <p class="mb-0">Send a message directly to your chosen shelter</p>
+  <section class="hero">
+    <div class="hero-blob b1"></div><div class="hero-blob b2"></div>
+    <span class="float-emoji fe1">💬</span><span class="float-emoji fe2">🐾</span>
+    <div class="container position-relative">
+      <div class="hero-tag">💬 Get in touch</div>
+      <h1>Message a<br><span>Shelter Directly</span></h1>
+      <p>Have questions? Reach out to any shelter and we'll get back to you soon.</p>
     </div>
   </section>
 
-  <div class="container py-5">
+  <div class="main-wrap">
+    <div class="container">
 
-    <!-- Not logged in -->
-    <div id="notLoggedIn" style="display:none;">
-      <div class="text-center py-5">
-        <i class="fas fa-lock text-muted" style="font-size:4rem;"></i>
-        <h4 class="mt-3 fw-bold">Please Login First</h4>
-        <p class="text-muted">You need to be logged in to contact a shelter.</p>
-        <a href="/static/login.html" class="btn btn-success px-4">Login Now</a>
-      </div>
-    </div>
-
-    <!-- Main content -->
-    <div id="mainContent" style="display:none;">
-      <div class="row g-4">
-
-        <!-- Left: Shelter selector + info -->
-        <div class="col-lg-4">
-
-          <!-- Select Shelter -->
-          <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
-            <h6 class="fw-bold mb-3"><i class="fas fa-home text-success me-2"></i>Select Shelter</h6>
-            <select class="form-select" id="shelterSelect" onchange="onShelterChange()">
-              <option value="">-- Choose a shelter --</option>
-            </select>
-          </div>
-
-          <!-- Shelter Info Card -->
-          <div class="card border-0 shadow-sm rounded-4 p-4 shelter-card" id="shelterInfoCard" style="display:none;">
-            <div class="text-center mb-3">
-              <img id="shelterLogo" src="" style="width:70px;height:70px;object-fit:cover;border-radius:50%;">
-            </div>
-            <h6 class="fw-bold mb-1" id="shelterName"></h6>
-            <p class="text-muted small mb-1"><i class="fas fa-map-marker-alt text-success me-1"></i><span id="shelterAddress"></span></p>
-            <p class="text-muted small mb-1"><i class="fas fa-phone text-success me-1"></i><span id="shelterPhone"></span></p>
-            <p class="text-muted small mb-0"><i class="fas fa-envelope text-success me-1"></i><span id="shelterEmail"></span></p>
-          </div>
-
+      <!-- Not logged in -->
+      <div id="notLoggedIn" style="display:none;">
+        <div class="locked-card">
+          <div class="locked-icon">🔒</div>
+          <h5 class="fw-bold mb-2" style="color:var(--dark);">Please Login First</h5>
+          <p class="text-muted mb-4">You need to be logged in to contact a shelter.</p>
+          <a href="/static/login.html" class="btn-login">Login Now</a>
         </div>
+      </div>
 
-        <!-- Right: Chat -->
-        <div class="col-lg-8">
-          <div class="card border-0 shadow-sm rounded-4 p-4">
-            <h6 class="fw-bold mb-3"><i class="fas fa-comments text-success me-2"></i>Messages</h6>
+      <div id="mainContent" style="display:none;">
+        <div class="row g-4">
 
-            <!-- Chat box -->
-            <div class="chat-box mb-3" id="chatBox">
-              <div class="text-center text-muted py-5" id="chatPlaceholder">
-                <i class="fas fa-comments" style="font-size:3rem;opacity:0.3;"></i>
-                <p class="mt-2">Select a shelter to start messaging</p>
+          <!-- Left: Selector + Info -->
+          <div class="col-lg-4">
+            <div class="selector-card">
+              <p class="slabel">Select a shelter</p>
+              <select class="form-select" id="shelterSelect" onchange="onShelterChange()">
+                <option value="">-- Choose a shelter --</option>
+              </select>
+            </div>
+            <div class="shelter-info-card" id="shelterInfoCard" style="display:none;">
+              <div class="shelter-info-top">
+                <div id="shelterLogoWrap"><div class="shelter-av-placeholder">🏠</div></div>
+                <div class="shelter-info-name" id="shelterName"></div>
+              </div>
+              <div class="shelter-info-body">
+                <div class="info-row"><i class="fas fa-map-marker-alt"></i><span id="shelterAddress"></span></div>
+                <div class="info-row"><i class="fas fa-phone"></i><span id="shelterPhone"></span></div>
+                <div class="info-row"><i class="fas fa-envelope"></i><span id="shelterEmail"></span></div>
               </div>
             </div>
-
-            <!-- Message input -->
-            <div class="d-flex gap-2" id="messageInputArea" style="display:none !important;">
-              <input type="text" class="form-control rounded-pill" id="messageInput"
-                     placeholder="Type your message..." onkeypress="handleEnter(event)">
-              <button class="btn btn-success rounded-pill px-4" onclick="sendMessage()">
-                <i class="fas fa-paper-plane"></i>
-              </button>
-            </div>
-
-            <div id="messageResult" class="mt-2"></div>
           </div>
-        </div>
 
+          <!-- Right: Chat -->
+          <div class="col-lg-8">
+            <div class="chat-card">
+              <div class="chat-header">
+                <div class="chat-header-icon">💬</div>
+                <div>
+                  <h6>Messages</h6>
+                  <p id="chatSubtitle">Select a shelter to start chatting</p>
+                </div>
+              </div>
+              <div class="chat-box" id="chatBox">
+                <div class="chat-empty">
+                  <div class="chat-empty-icon">💬</div>
+                  <p>Select a shelter to start messaging</p>
+                </div>
+              </div>
+              <div class="chat-input-area" id="chatInputArea">
+                <input type="text" class="chat-input" id="messageInput" placeholder="Type your message..." onkeypress="handleEnter(event)">
+                <button class="btn-send" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="bg-dark text-white text-center py-4 mt-4">
-    <p>© 2026 PetPaw - Made with ❤️ for animals</p>
-  </footer>
+  <footer class="bg-dark text-white text-center py-4 mt-4"><p class="mb-0">© 2026 PetPaw - Made with ❤️ for animals</p></footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/static/js/main.js"></script>
@@ -156,159 +177,98 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       currentUser = getCurrentUser();
-
-      if (!currentUser) {
-        document.getElementById('notLoggedIn').style.display = 'block';
-        return;
-      }
-
-      document.getElementById('mainContent').style.display = 'block';
-
-      // Check if shelter_id is in URL (coming from shelter detail page)
-      const params = new URLSearchParams(window.location.search);
-      const preSelectedId = params.get('shelter_id');
-
-      await loadShelterOptions(preSelectedId);
+      if (!currentUser) { document.getElementById('notLoggedIn').style.display='block'; return; }
+      document.getElementById('mainContent').style.display='block';
+      const preId = new URLSearchParams(window.location.search).get('shelter_id');
+      await loadShelterOptions(preId);
     });
 
-    async function loadShelterOptions(preSelectedId = null) {
+    async function loadShelterOptions(preId=null) {
       try {
         const res = await fetch('/api/shelters');
         const data = await res.json();
         sheltersData = data.shelters || [];
-
-        const select = document.getElementById('shelterSelect');
-        select.innerHTML = '<option value="">-- Choose a shelter --</option>';
-        sheltersData.forEach(s => {
-          select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-        });
-
-        if (preSelectedId) {
-          select.value = preSelectedId;
-          onShelterChange();
-        }
-      } catch (e) {
-        console.error(e);
-      }
+        const sel = document.getElementById('shelterSelect');
+        sel.innerHTML = '<option value="">-- Choose a shelter --</option>';
+        sheltersData.forEach(s => sel.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+        if (preId) { sel.value = preId; onShelterChange(); }
+      } catch(e) {}
     }
 
     function onShelterChange() {
-      const select = document.getElementById('shelterSelect');
-      selectedShelterId = select.value;
-
+      const sel = document.getElementById('shelterSelect');
+      selectedShelterId = sel.value;
       if (!selectedShelterId) {
         document.getElementById('shelterInfoCard').style.display = 'none';
-        document.getElementById('messageInputArea').style.display = 'none !important';
+        document.getElementById('chatInputArea').style.display = 'none';
         return;
       }
-
-      // Show shelter info
-      const shelter = sheltersData.find(s => s.id === selectedShelterId);
-      if (shelter) {
-        document.getElementById('shelterLogo').src = shelter.logo_url || 'https://placehold.co/70x70?text=S';
-        document.getElementById('shelterName').textContent = shelter.name;
-        document.getElementById('shelterAddress').textContent = shelter.address || 'N/A';
-        document.getElementById('shelterPhone').textContent = shelter.phone || 'N/A';
-        document.getElementById('shelterEmail').textContent = shelter.email || 'N/A';
+      const s = sheltersData.find(x => x.id === selectedShelterId);
+      if (s) {
+        const logoHtml = s.logo_url
+          ? `<img src="${s.logo_url}" class="shelter-av" onerror="this.style.display='none'">`
+          : `<div class="shelter-av-placeholder">🏠</div>`;
+        document.getElementById('shelterLogoWrap').innerHTML = logoHtml;
+        document.getElementById('shelterName').textContent = s.name;
+        document.getElementById('shelterAddress').textContent = s.address || 'N/A';
+        document.getElementById('shelterPhone').textContent = s.phone || 'N/A';
+        document.getElementById('shelterEmail').textContent = s.email || 'N/A';
         document.getElementById('shelterInfoCard').style.display = 'block';
+        document.getElementById('chatSubtitle').textContent = `Chatting with ${s.name}`;
       }
-
-      // Show input
-      document.getElementById('messageInputArea').style.display = 'flex';
-
-      // Load messages
+      document.getElementById('chatInputArea').style.display = 'flex';
       loadMessages();
     }
 
     async function loadMessages() {
-      const chatBox = document.getElementById('chatBox');
-      chatBox.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-success"></div></div>';
-
+      const box = document.getElementById('chatBox');
+      box.innerHTML = '<div class="chat-empty"><div class="spinner-border spinner-border-sm" style="color:var(--purple);"></div></div>';
       try {
         const res = await fetch(`/api/messages/${currentUser.id}/${selectedShelterId}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` }
+          headers:{'Authorization':`Bearer ${localStorage.getItem('token')||''}`}
         });
-
         const data = await res.json();
-        const messages = data.messages || [];
-
-        if (messages.length === 0) {
-          chatBox.innerHTML = `
-            <div class="text-center text-muted py-4">
-              <i class="fas fa-comment-dots" style="font-size:2.5rem;opacity:0.3;"></i>
-              <p class="mt-2 small">No messages yet. Say hello! 👋</p>
-            </div>`;
+        const msgs = data.messages || [];
+        if (!msgs.length) {
+          box.innerHTML = `<div class="chat-empty"><div class="chat-empty-icon">👋</div><p>No messages yet. Say hello!</p></div>`;
           return;
         }
-
-        chatBox.innerHTML = '';
-        messages.forEach(msg => {
-          const isSent = msg.sender_id === currentUser.id;
-          const time = new Date(msg.sent_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-          chatBox.innerHTML += `
-            <div class="d-flex mb-2">
-              <div class="message-bubble ${isSent ? 'message-sent' : 'message-received'}">
-                <p class="mb-0">${msg.content}</p>
-                <small class="opacity-75" style="font-size:10px;">${time}</small>
-              </div>
-            </div>`;
-        });
-
-        // Scroll to bottom
-        chatBox.scrollTop = chatBox.scrollHeight;
-
-      } catch (e) {
-        chatBox.innerHTML = '<div class="alert alert-danger">Error loading messages.</div>';
+        box.innerHTML = msgs.map(msg => {
+          const sent = msg.sender_id === currentUser.id;
+          const time = new Date(msg.sent_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+          return `<div class="msg-wrap">
+            <div class="msg-bubble ${sent?'msg-sent':'msg-received'}">
+              <p class="mb-0">${msg.content}</p>
+              <div class="msg-time">${time}</div>
+            </div>
+          </div>`;
+        }).join('');
+        box.scrollTop = box.scrollHeight;
+      } catch(e) {
+        box.innerHTML = '<div class="chat-empty"><p class="text-danger">Error loading messages.</p></div>';
       }
     }
 
     async function sendMessage() {
       const input = document.getElementById('messageInput');
       const content = input.value.trim();
-
-      if (!content) return;
-      if (!selectedShelterId) {
-        document.getElementById('messageResult').innerHTML =
-          '<div class="alert alert-warning small py-2">Please select a shelter first.</div>';
-        return;
-      }
-
+      if (!content || !selectedShelterId) return;
       input.disabled = true;
-
       try {
         const res = await fetch('/api/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-          },
-          body: JSON.stringify({
-            sender_id: currentUser.id,
-            receiver_id: selectedShelterId,
-            content: content,
-            is_read: false
-          })
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('token')||''}`},
+          body:JSON.stringify({sender_id:currentUser.id,receiver_id:selectedShelterId,content,is_read:false})
         });
-
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to send');
-
+        if (!res.ok) throw new Error(data.error||'Failed');
         input.value = '';
-        document.getElementById('messageResult').innerHTML = '';
-        loadMessages(); // Refresh chat
-
-      } catch (err) {
-        document.getElementById('messageResult').innerHTML =
-          `<div class="alert alert-danger small py-2">${err.message}</div>`;
-      } finally {
-        input.disabled = false;
-        input.focus();
-      }
+        loadMessages();
+      } catch(e) { alert(e.message); }
+      finally { input.disabled=false; input.focus(); }
     }
 
-    function handleEnter(event) {
-      if (event.key === 'Enter') sendMessage();
-    }
+    function handleEnter(e) { if (e.key==='Enter') sendMessage(); }
   </script>
 </body>
 </html>

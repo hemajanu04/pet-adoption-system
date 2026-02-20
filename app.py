@@ -293,34 +293,17 @@ def create_donation():
 def get_recent_donations():
     try:
         result = supabase.table("donations") \
-            .select("amount, donated_at, shelter_id, donor_id, shelters(name)") \
+            .select("amount, currency, donated_at, shelter_id, shelters(name)") \
             .eq("status", "completed") \
             .order("donated_at", desc=True) \
             .limit(5) \
             .execute()
 
-        donations = result.data or []
-
-        for d in donations:
-            try:
-                if d.get("donor_id"):
-                    profile = supabase.table("profiles") \
-                        .select("full_name") \
-                        .eq("id", d["donor_id"]) \
-                        .execute()
-                    if profile.data and len(profile.data) > 0:
-                        d["donor_name"] = profile.data[0].get("full_name") or "Anonymous"
-                    else:
-                        d["donor_name"] = "Anonymous"
-                else:
-                    d["donor_name"] = "Anonymous"
-            except:
-                d["donor_name"] = "Anonymous"
-
-        return jsonify({"donations": donations})
+        return jsonify({"donations": result.data or []})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 # ─────────────────────────────
 # GET USER'S ADOPTION APPLICATIONS
 # ─────────────────────────────
@@ -370,6 +353,70 @@ def get_messages(user_id, shelter_id):
             .order("sent_at") \
             .execute()
         return jsonify({"messages": result.data or []})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ─────────────────────────────
+# GET USER FAVORITES
+# ─────────────────────────────
+@app.route('/api/favorites/<user_id>', methods=['GET'])
+def get_favorites(user_id):
+    try:
+        result = supabase.table("favorites") \
+            .select("id, pet_id, pets(id, name, breed, age, image_url)") \
+            .eq("user_id", user_id) \
+            .order("created_at", desc=True) \
+            .execute()
+        return jsonify({"favorites": result.data or []})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────
+# ADD FAVORITE
+# ─────────────────────────────
+@app.route('/api/favorites', methods=['POST'])
+def add_favorite():
+    try:
+        data = request.get_json()
+        result = supabase.table("favorites").insert({
+            "user_id": data.get("user_id"),
+            "pet_id": data.get("pet_id")
+        }).execute()
+        return jsonify({"message": "Added to favorites!", "id": result.data[0]['id']}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────
+# REMOVE FAVORITE
+# ─────────────────────────────
+@app.route('/api/favorites/<favorite_id>', methods=['DELETE'])
+def remove_favorite(favorite_id):
+    try:
+        supabase.table("favorites") \
+            .delete() \
+            .eq("id", favorite_id) \
+            .execute()
+        return jsonify({"message": "Removed from favorites!"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────
+# CHECK IF PET IS FAVORITED
+# ─────────────────────────────
+@app.route('/api/favorites/check/<user_id>/<pet_id>', methods=['GET'])
+def check_favorite(user_id, pet_id):
+    try:
+        result = supabase.table("favorites") \
+            .select("id") \
+            .eq("user_id", user_id) \
+            .eq("pet_id", pet_id) \
+            .execute()
+        if result.data:
+            return jsonify({"favorited": True, "favorite_id": result.data[0]['id']})
+        return jsonify({"favorited": False})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     

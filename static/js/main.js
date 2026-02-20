@@ -324,10 +324,9 @@ async function loadShelterDetail() {
     const s = data.shelter;
     const pets = data.pets || [];
 
-    const websiteLink = `
-  ${s.website ? `<a href="${s.website}" target="_blank" class="btn btn-outline-success btn-sm me-2"><i class="fas fa-globe me-1"></i>Visit Website</a>` : ''}
-  <a href="/static/contact-shelter.html?shelter_id=${s.id}" class="btn btn-success btn-sm"><i class="fas fa-envelope me-1"></i>Contact Shelter</a>
-`;
+    const websiteLink = s.website
+      ? `<a href="${s.website}" target="_blank" class="btn btn-outline-success btn-sm"><i class="fas fa-globe me-1"></i>Visit Website</a>`
+      : '';
 
     const petsHtml = pets.length === 0
       ? '<div class="col-12"><div class="alert alert-info">No available pets at this shelter right now.</div></div>'
@@ -433,5 +432,73 @@ document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('featured-pets') || document.getElementById('pets-container')) loadFeaturedPets();
   if (document.getElementById('pet-detail')) loadPetDetail();
   if (document.getElementById('shelters-container')) loadShelters();
-  if (document.getElementById('shelter-detail')) loadShelterDetail();
+  if (document.getElementById("shelter-detail")) loadShelterDetail();
+  if (document.getElementById("pets-container") || document.getElementById("featured-pets")) setTimeout(checkFavorites, 500);
 });
+
+// ================================
+// FAVORITES / WISHLIST
+// ================================
+async function toggleFavorite(petId, btn) {
+  const user = getCurrentUser();
+  if (!user) {
+    alert('Please login to save favorites!');
+    location.href = '/static/login.html';
+    return;
+  }
+
+  const icon = btn.querySelector('i');
+  const isFavorited = icon.classList.contains('text-danger');
+
+  if (isFavorited) {
+    // Remove favorite
+    const favId = btn.dataset.favId;
+    try {
+      await fetch(`/api/favorites/${favId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` }
+      });
+      icon.classList.remove('text-danger');
+      icon.classList.add('text-muted');
+      btn.dataset.favId = '';
+    } catch (e) { console.error(e); }
+  } else {
+    // Add favorite
+    try {
+      const res = await fetch('/api/favorites', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+        },
+        body: JSON.stringify({ user_id: user.id, pet_id: petId })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        icon.classList.remove('text-muted');
+        icon.classList.add('text-danger');
+        btn.dataset.favId = data.id;
+      }
+    } catch (e) { console.error(e); }
+  }
+}
+
+// Check and highlight favorites on page load
+async function checkFavorites() {
+  const user = getCurrentUser();
+  if (!user) return;
+
+  const favBtns = document.querySelectorAll('.fav-btn');
+  favBtns.forEach(async btn => {
+    const petId = btn.dataset.petId;
+    try {
+      const res = await fetch(`/api/favorites/check/${user.id}/${petId}`);
+      const data = await res.json();
+      if (data.favorited) {
+        btn.querySelector('i').classList.remove('text-muted');
+        btn.querySelector('i').classList.add('text-danger');
+        btn.dataset.favId = data.favorite_id;
+      }
+    } catch (e) {}
+  });
+}

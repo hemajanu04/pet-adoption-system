@@ -6,64 +6,192 @@
   <title>Shelters - PetPaw</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/style.css"/>
-</head>
-<body class="bg-light">
+  <style>
+    :root {
+      --coral: #ff6b6b; --coral-dark: #e85555;
+      --purple: #7c3aed; --purple-light: #ede9fe;
+      --gold: #f59e0b; --teal: #0d9488;
+      --dark: #1e1b4b; --text: #374151; --muted: #9ca3af;
+    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fafafa; color: var(--text); }
+    .navbar { background: white !important; border-bottom: 1px solid #f0f0f0; box-shadow: 0 1px 12px rgba(0,0,0,0.06); }
+    .navbar-brand { font-family: 'Fraunces', serif; font-size: 1.5rem; color: var(--dark) !important; }
 
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0d9488 100%);
+      padding: 80px 0 100px; position: relative; overflow: hidden;
+    }
+    .hero-blob { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.25; }
+    .b1 { width: 350px; height: 350px; background: var(--coral); top: -80px; right: -60px; }
+    .b2 { width: 280px; height: 280px; background: var(--purple); bottom: -80px; left: -40px; }
+    .float-emoji { position: absolute; font-size: 2.5rem; opacity: 0.5; animation: float 4s ease-in-out infinite; }
+    .fe1 { top: 20%; right: 10%; animation-delay: 0s; }
+    .fe2 { top: 60%; right: 5%; animation-delay: 1.5s; font-size: 2rem; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.12); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.95);
+      border-radius: 999px; padding: 6px 18px;
+      font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; margin-bottom: 18px;
+    }
+    .hero h1 { font-family: 'Fraunces', serif; font-size: clamp(2rem,5vw,3.2rem); color: white; }
+    .hero h1 span { color: var(--gold); }
+    .hero p { color: rgba(255,255,255,0.78); font-size: 1.05rem; }
+
+    /* MAIN */
+    .main-wrap { margin-top: -48px; position: relative; z-index: 10; padding-bottom: 60px; }
+
+    /* SHELTER CARDS */
+    .shelter-card {
+      background: white; border-radius: 24px;
+      box-shadow: 0 8px 32px rgba(30,27,75,0.08);
+      overflow: hidden; transition: all 0.25s ease; height: 100%; border: none;
+    }
+    .shelter-card:hover { transform: translateY(-6px); box-shadow: 0 20px 48px rgba(30,27,75,0.14); }
+    .shelter-card-top {
+      background: linear-gradient(135deg, var(--dark), #2d1b69);
+      padding: 28px; text-align: center; position: relative;
+    }
+    .shelter-logo {
+      width: 80px; height: 80px; border-radius: 50%;
+      object-fit: cover; border: 3px solid rgba(255,255,255,0.3);
+      background: white;
+    }
+    .shelter-logo-placeholder {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--coral), var(--purple));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; margin: 0 auto;
+      border: 3px solid rgba(255,255,255,0.3);
+    }
+    .shelter-body { padding: 24px; }
+    .shelter-name { font-family: 'Fraunces', serif; font-size: 1.15rem; color: var(--dark); font-weight: 700; margin-bottom: 12px; }
+    .shelter-desc { font-size: 0.83rem; color: var(--muted); line-height: 1.5; margin-bottom: 14px; }
+    .info-row { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text); margin-bottom: 6px; }
+    .info-row i { width: 18px; text-align: center; color: var(--teal); }
+    .shelter-footer { padding: 0 24px 24px; }
+    .btn-view-shelter {
+      display: block; width: 100%; text-align: center;
+      background: linear-gradient(135deg, var(--teal), #0f766e);
+      color: white; border: none; border-radius: 14px;
+      padding: 13px; font-weight: 700; font-size: 0.9rem;
+      text-decoration: none; transition: all 0.2s;
+      box-shadow: 0 4px 14px rgba(13,148,136,0.3);
+    }
+    .btn-view-shelter:hover { color: white; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(13,148,136,0.4); }
+
+    /* STATS */
+    .stats-bar {
+      background: white; border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+      padding: 20px 32px; margin-bottom: 32px;
+      display: flex; align-items: center; gap: 0;
+    }
+    .stat-item { flex: 1; text-align: center; }
+    .stat-item + .stat-item { border-left: 1px solid #f0f0f0; }
+    .stat-num { font-family: 'Fraunces', serif; font-size: 2rem; color: var(--dark); line-height: 1; }
+    .stat-label { font-size: 0.72rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; }
+
+    .slabel { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple); margin-bottom: 12px; }
+    .card-col { animation: fadeUp 0.4s ease both; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg">
     <div class="container">
-      <a class="navbar-brand fw-bold text-success" href="/static/index.html">
-        <i class="fas fa-paw me-2"></i>PetPaw
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
+      <a class="navbar-brand" href="/static/index.html"><i class="fas fa-paw me-2 text-success"></i>PetPaw</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
+        <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item"><a class="nav-link" href="/static/index.html">Home</a></li>
-          <li class="nav-item"><a class="nav-link active" href="/static/shelters.html">Shelters</a></li>
+          <li class="nav-item"><a class="nav-link fw-bold" style="color:var(--teal);" href="/static/shelters.html">Shelters</a></li>
           <li class="nav-item"><a class="nav-link" href="/static/donate.html">Donate</a></li>
           <li class="nav-item"><a class="nav-link" href="/static/my-adoptions.html">My Adoptions</a></li>
+          <li class="nav-item"><a class="nav-link" href="/static/my-favorites.html">❤️ Favorites</a></li>
           <li class="nav-item"><a class="nav-link" href="/static/contact-shelter.html">Contact</a></li>
           <li class="nav-item"><a class="nav-link" href="/static/login.html">Login</a></li>
-          <li class="nav-item">
-            <a class="nav-link btn btn-success text-white ms-3 px-4" href="/static/register.html">Register</a>
-          </li>
+          <li class="nav-item ms-2"><a class="btn btn-success px-4 rounded-pill" href="/static/register.html">Register</a></li>
         </ul>
       </div>
     </div>
   </nav>
 
-  <!-- Header -->
-  <section class="bg-success text-white text-center py-4">
-    <div class="container">
-      <h2 class="fw-bold mb-1"><i class="fas fa-home me-2"></i>Our Shelters</h2>
-      <p class="mb-0">Find loving shelters near you and meet the pets waiting for a home</p>
+  <section class="hero">
+    <div class="hero-blob b1"></div>
+    <div class="hero-blob b2"></div>
+    <span class="float-emoji fe1">🏠</span>
+    <span class="float-emoji fe2">🐾</span>
+    <div class="container position-relative">
+      <div class="hero-tag">🏠 Find a shelter near you</div>
+      <h1>Shelters Full of<br><span>Love & Hope</span></h1>
+      <p>Every shelter is a haven for animals waiting for their forever families.</p>
     </div>
   </section>
 
-  <!-- Shelters List -->
-  <div class="container py-5">
-    <div class="row g-4" id="shelters-container">
-      <div class="text-center py-5">
-        <div class="spinner-border text-success"></div>
-        <p>Loading shelters...</p>
+  <div class="main-wrap">
+    <div class="container">
+      <div class="stats-bar" id="statsBar">
+        <div class="stat-item"><div class="stat-num" id="statCount">—</div><div class="stat-label">Shelters</div></div>
+        <div class="stat-item"><div class="stat-num">🐾</div><div class="stat-label">All Cities</div></div>
+        <div class="stat-item"><div class="stat-num">❤️</div><div class="stat-label">Caring Homes</div></div>
+      </div>
+      <div class="row g-4" id="shelters-container">
+        <div class="col-12 text-center py-5"><div class="spinner-border" style="color:var(--teal);"></div><p class="mt-2 text-muted">Loading shelters...</p></div>
       </div>
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="bg-dark text-white text-center py-4">
-    <p>© 2026 PetPaw - Made with ❤️ for animals</p>
-  </footer>
+  <footer class="bg-dark text-white text-center py-4"><p class="mb-0">© 2026 PetPaw - Made with ❤️ for animals</p></footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/static/js/main.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      loadShelters();
-    });
+    document.addEventListener('DOMContentLoaded', () => { loadShelters(); });
+
+    async function loadShelters() {
+      const container = document.getElementById('shelters-container');
+      try {
+        const res = await fetch('/api/shelters');
+        const data = await res.json();
+        if (!data.shelters || !data.shelters.length) {
+          container.innerHTML = '<div class="col-12 text-center py-5"><h5 class="text-muted">No shelters found.</h5></div>';
+          return;
+        }
+        document.getElementById('statCount').textContent = data.shelters.length;
+        container.innerHTML = '';
+        data.shelters.forEach((s, i) => {
+          const logoHtml = s.logo_url
+            ? `<img src="${s.logo_url}" class="shelter-logo" onerror="this.style.display='none'">`
+            : `<div class="shelter-logo-placeholder">🏠</div>`;
+          const col = document.createElement('div');
+          col.className = 'col-md-4 card-col';
+          col.style.animationDelay = `${i * 0.1}s`;
+          col.innerHTML = `
+            <div class="shelter-card">
+              <div class="shelter-card-top">${logoHtml}</div>
+              <div class="shelter-body">
+                <div class="shelter-name">${s.name}</div>
+                <div class="shelter-desc">${s.description || 'A caring shelter dedicated to animal welfare.'}</div>
+                <div class="info-row"><i class="fas fa-map-marker-alt"></i>${s.address || 'N/A'}</div>
+                <div class="info-row"><i class="fas fa-phone"></i>${s.phone || 'N/A'}</div>
+                <div class="info-row"><i class="fas fa-envelope"></i>${s.email || 'N/A'}</div>
+              </div>
+              <div class="shelter-footer">
+                <a href="/static/shelter-detail.html?id=${s.id}" class="btn-view-shelter">View Shelter & Pets →</a>
+              </div>
+            </div>`;
+          container.appendChild(col);
+        });
+      } catch(e) {
+        container.innerHTML = '<div class="alert alert-danger col-12">Error loading shelters.</div>';
+      }
+    }
   </script>
 </body>
 </html>
