@@ -27,25 +27,3 @@ python app.py
 ```
 Open: http://127.0.0.1:5000/static/index.html
 ```
-
-Then **scroll down** → click the green **"Commit new file"** button.
-
----
-
-### ✅ Step 2 — Upload your PDF
-
-After committing the README, you'll be back on the repo page. Now:
-
-1. Click **"Add file"** button (top right, near the green Code button)
-2. Click **"Upload files"**
-3. **Drag your PDF** from your Downloads folder onto the upload area
-4. In the commit message box type: `docs: add project documentation`
-5. Click **"Commit changes"**
-
----
-
-### ✅ Step 3 — Create the `docs` folder while uploading
-
-When you're on the Upload page, look for where it says the file path. Before uploading, click **"Add file" → "Create new file"** instead, and type:
-```
-docs/PetPaw_Project_Document.pdf
