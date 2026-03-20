@@ -104,17 +104,20 @@ def health():
 @app.route('/api/pets', methods=['GET'])
 def get_pets():
     try:
+        # ✅ FIX: Removed species(name) and breeds(name) FK joins
+        # because pets are added with plain-text species/breed fields.
+        # Using * which returns all columns including species and breed as plain text.
         query = supabase.table("pets") \
             .select("""
                 *,
-                species(name),
-                breeds(name),
                 shelters(id, name, address, phone, logo_url)
             """, count="exact") \
             .eq("is_active", True) \
             .eq("status", "available")
 
-        limit = request.args.get('limit', default=12, type=int)
+        # ✅ FIX: Default limit raised to 1000 so all pets are visible.
+        # Frontend can still pass ?limit=X&page=Y for pagination if needed.
+        limit = request.args.get('limit', default=1000, type=int)
         page = request.args.get('page', default=1, type=int)
         offset = (page - 1) * limit
 
@@ -140,8 +143,6 @@ def get_pet_detail(pet_id):
         result = supabase.table("pets") \
             .select("""
                 *,
-                species(name),
-                breeds(name),
                 shelters(id, name, address, phone, email, logo_url, description)
             """) \
             .eq("id", pet_id) \
@@ -153,6 +154,70 @@ def get_pet_detail(pet_id):
             return jsonify({"error": "Pet not found"}), 404
 
         return jsonify({"pet": result.data})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────
+# ADD PET
+# ─────────────────────────────
+@app.route('/api/pets', methods=['POST'])
+def add_pet():
+    try:
+        data = request.get_json()
+
+        # ✅ FIX: Explicitly build insert payload so is_active is always True
+        # and status is always 'available', ensuring new pets show on the screen.
+        insert_data = {
+            "name":        data.get("name"),
+            "age":         data.get("age"),
+            "gender":      data.get("gender"),
+            "image_url":   data.get("image_url"),
+            "description": data.get("description"),
+            "status":      "available",
+            "is_active":   True,
+        }
+
+        # Include species and breed as plain text if provided
+        if data.get("species"):
+            insert_data["species"] = data.get("species")
+        if data.get("breed"):
+            insert_data["breed"] = data.get("breed")
+
+        result = supabase.table("pets").insert(insert_data).execute()
+        return jsonify({"message": "Pet added", "id": result.data[0]['id']}), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────
+# DELETE PET
+# ─────────────────────────────
+@app.route('/api/pets/<pet_id>', methods=['DELETE'])
+def delete_pet(pet_id):
+    try:
+        # Check pet exists first
+        check = supabase.table("pets") \
+            .select("id") \
+            .eq("id", pet_id) \
+            .execute()
+
+        if not check.data:
+            return jsonify({"error": "Pet not found"}), 404
+
+        # FIX: Use hard delete with service role key (SUPABASE_SECRET_KEY).
+        # Soft update(.update) was silently blocked by Supabase RLS policies —
+        # the card disappeared on screen but the DB record was never changed,
+        # causing the pet to reappear on refresh. Hard delete with the service
+        # role key bypasses RLS entirely and permanently removes the record.
+        supabase.table("pets") \
+            .delete() \
+            .eq("id", pet_id) \
+            .execute()
+
+        return jsonify({"message": "Pet deleted successfully"}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -183,7 +248,6 @@ def get_shelters():
 @app.route('/api/shelters/<shelter_id>', methods=['GET'])
 def get_shelter_detail(shelter_id):
     try:
-        # Get shelter info
         shelter_result = supabase.table("shelters") \
             .select("*") \
             .eq("id", shelter_id) \
@@ -193,9 +257,8 @@ def get_shelter_detail(shelter_id):
         if not shelter_result.data:
             return jsonify({"error": "Shelter not found"}), 404
 
-        # Get pets belonging to this shelter
         pets_result = supabase.table("pets") \
-            .select("*, species(name)") \
+            .select("*") \
             .eq("shelter_id", shelter_id) \
             .eq("is_active", True) \
             .eq("status", "available") \
@@ -219,13 +282,13 @@ def create_adoption_request():
         data = request.get_json()
 
         response = supabase.table("adoption_requests").insert({
-            "user_id": data.get("user_id"),
-            "pet_id": data.get("pet_id"),
+            "user_id":   data.get("user_id"),
+            "pet_id":    data.get("pet_id"),
             "full_name": data.get("full_name"),
-            "phone": data.get("phone"),
-            "address": data.get("address"),
-            "message": data.get("message"),
-            "status": "pending"
+            "phone":     data.get("phone"),
+            "address":   data.get("address"),
+            "message":   data.get("message"),
+            "status":    "pending"
         }).execute()
 
         return jsonify({"message": "Adoption request submitted successfully"}), 201
@@ -251,16 +314,6 @@ def get_species():
     return jsonify(response.data)
 
 
-@app.route('/api/pets', methods=['POST'])
-def add_pet():
-    try:
-        data = request.get_json()
-        result = supabase.table("pets").insert(data).execute()
-        return jsonify({"message": "Pet added", "id": result.data[0]['id']}), 201
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
 # ─────────────────────────────
 # CREATE DONATION
 # ─────────────────────────────
@@ -270,14 +323,14 @@ def create_donation():
         data = request.get_json()
 
         result = supabase.table("donations").insert({
-            "donor_id": data.get("donor_id"),
-            "shelter_id": data.get("shelter_id"),
-            "pet_id": data.get("pet_id"),
-            "amount": data.get("amount"),
-            "currency": data.get("currency", "INR"),
+            "donor_id":       data.get("donor_id"),
+            "shelter_id":     data.get("shelter_id"),
+            "pet_id":         data.get("pet_id"),
+            "amount":         data.get("amount"),
+            "currency":       data.get("currency", "INR"),
             "payment_method": data.get("payment_method", "upi"),
-            "status": "completed",
-            "donated_at": "now()"
+            "status":         "completed",
+            "donated_at":     "now()"
         }).execute()
 
         return jsonify({"message": "Donation recorded successfully!"}), 201
@@ -293,16 +346,54 @@ def create_donation():
 def get_recent_donations():
     try:
         result = supabase.table("donations") \
-            .select("amount, currency, donated_at, shelter_id, shelters(name)") \
+            .select("amount, currency, donated_at, shelter_id, donor_id, shelters(name), profiles(full_name)") \
             .eq("status", "completed") \
             .order("donated_at", desc=True) \
-            .limit(5) \
+            .limit(10) \
             .execute()
 
-        return jsonify({"donations": result.data or []})
+        # FIX: Extract donor name from joined profiles table.
+        # Previously only selected shelters(name) — profiles were never joined,
+        # so donor_name was always None and displayed as "Anonymous".
+        donations = []
+        for d in (result.data or []):
+            profile = d.get("profiles") or {}
+            donations.append({
+                "amount":     d.get("amount"),
+                "currency":   d.get("currency"),
+                "donated_at": d.get("donated_at"),
+                "shelter_id": d.get("shelter_id"),
+                "shelters":   d.get("shelters"),
+                "donor_name": profile.get("full_name") or "Anonymous",
+            })
+
+        return jsonify({"donations": donations})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────
+# DONATION STATS (total donors + total raised)
+# ─────────────────────────────
+@app.route('/api/donations/stats', methods=['GET'])
+def get_donation_stats():
+    try:
+        result = supabase.table("donations") \
+            .select("amount", count="exact") \
+            .eq("status", "completed") \
+            .execute()
+
+        total_raised = sum(float(d.get("amount", 0)) for d in (result.data or []))
+        total_donors = result.count or 0
+
+        return jsonify({
+            "total_donors": total_donors,
+            "total_raised": total_raised
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 # ─────────────────────────────
 # GET USER'S ADOPTION APPLICATIONS
@@ -319,6 +410,7 @@ def get_my_adoptions(user_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 # ─────────────────────────────
 # SEND MESSAGE
 # ─────────────────────────────
@@ -327,11 +419,11 @@ def send_message():
     try:
         data = request.get_json()
         result = supabase.table("messages").insert({
-            "sender_id": data.get("sender_id"),
+            "sender_id":   data.get("sender_id"),
             "receiver_id": data.get("receiver_id"),
-            "content": data.get("content"),
-            "is_read": False,
-            "sent_at": "now()"
+            "content":     data.get("content"),
+            "is_read":     False,
+            "sent_at":     "now()"
         }).execute()
         return jsonify({"message": "Message sent!"}), 201
     except Exception as e:
@@ -355,6 +447,7 @@ def get_messages(user_id, shelter_id):
         return jsonify({"messages": result.data or []})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 # ─────────────────────────────
 # GET USER FAVORITES
@@ -381,7 +474,7 @@ def add_favorite():
         data = request.get_json()
         result = supabase.table("favorites").insert({
             "user_id": data.get("user_id"),
-            "pet_id": data.get("pet_id")
+            "pet_id":  data.get("pet_id")
         }).execute()
         return jsonify({"message": "Added to favorites!", "id": result.data[0]['id']}), 201
     except Exception as e:
@@ -419,6 +512,7 @@ def check_favorite(user_id, pet_id):
         return jsonify({"favorited": False})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
